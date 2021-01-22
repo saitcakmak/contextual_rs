@@ -6,7 +6,14 @@ requirements = [
     "botorch>=0.3.3",
     "scipy",
     "jupyter",
-    "matplotlib"
+    "matplotlib",
+]
+
+dev_requires = [
+    "black",
+    "flake8",
+    "pytest",
+    "coverage",
 ]
 
 setup(
@@ -16,4 +23,5 @@ setup(
     author="Sait Cakmak",
     packages=find_packages(),
     install_requires=requirements,
+    extras_require={"dev": dev_requires},
 )
