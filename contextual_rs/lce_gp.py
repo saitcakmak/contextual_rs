@@ -76,14 +76,16 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         dim = train_X.shape[-1]
         categorical_cols = [i % dim for i in categorical_cols]
         continuous_cols = [i for i in range(dim) if i not in categorical_cols]
+        self.has_continuous_cols = bool(continuous_cols)
         if input_transform is not None:
             input_transform.to(train_X)
         with torch.no_grad():
             # apply transform only to continuous columns
             transformed_X = train_X.clone()
-            transformed_X[..., continuous_cols] = self.transform_inputs(
-                X=train_X[..., continuous_cols], input_transform=input_transform
-            )
+            if self.has_continuous_cols:
+                transformed_X[..., continuous_cols] = self.transform_inputs(
+                    X=train_X[..., continuous_cols], input_transform=input_transform
+                )
         if outcome_transform is not None:
             train_Y, _ = outcome_transform(train_Y)
         self._validate_tensor_args(X=transformed_X, Y=train_Y)
@@ -108,27 +110,32 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         self.mean_module = ConstantMean(batch_shape=self._aug_batch_shape)
 
         # construct the covariance module
-        # TODO: support all categorical inputs?
         # MaternKernel for continuous columns, defaults from SingleTaskGP
-        self.cont_covar_module = ScaleKernel(
-            MaternKernel(
-                nu=2.5,
-                ard_num_dims=len(continuous_cols),
+        if self.has_continuous_cols:
+            self.cont_covar_module = ScaleKernel(
+                MaternKernel(
+                    nu=2.5,
+                    ard_num_dims=len(continuous_cols),
+                    batch_shape=self._aug_batch_shape,
+                    lengthscale_prior=GammaPrior(3.0, 6.0),
+                ),
                 batch_shape=self._aug_batch_shape,
-                lengthscale_prior=GammaPrior(3.0, 6.0),
-            ),
-            batch_shape=self._aug_batch_shape,
-            outputscale_prior=GammaPrior(2.0, 0.15),
-        )
-        self._subset_batch_dict = {
-            "likelihood.noise_covar.raw_noise": -2,
-            "mean_module.constant": -2,
-            "covar_module.raw_outputscale": -1,
-            "covar_module.base_kernel.raw_lengthscale": -3,
-        }
+                outputscale_prior=GammaPrior(2.0, 0.15),
+            )
+            self._subset_batch_dict = {
+                "likelihood.noise_covar.raw_noise": -2,
+                "mean_module.constant": -2,
+                "cont_covar_module.raw_outputscale": -1,
+                "cont_covar_module.base_kernel.raw_lengthscale": -3,
+            }
+        else:
+            self._subset_batch_dict = {
+                "likelihood.noise_covar.raw_noise": -2,
+                "mean_module.constant": -2,
+            }
 
         # this is based on LCEMGP
-        #  construct emb_dims based on categorical features
+        # construct emb_dims based on categorical features
         if embs_dim_list is None:
             #  set embedding_dim = 1 for each categorical variable
             embs_dim_list = [1] * len(categorical_cols)
@@ -206,7 +213,7 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
 
         # TODO: for optimization purposes, we may want to consider evaluations in the
             embedded space in the future, i.e., we can create a version of forward
-            which accepts `x` that is continuous and is of the embedding dimension.
+            which accepts `x` that is continuous and is of the embedded dimension.
             This would give us differentiability in the embedded inputs.
 
         Args:
@@ -215,17 +222,19 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         Returns:
             The MVN object with mean mu(x) and covariance K(x, x)
         """
-        x_cont = self.transform_inputs(x[..., self.continuous_cols])
+        mean = self.mean_module(x)
+        # compute covar over continuous columns
+        if self.has_continuous_cols:
+            x_cont = self.transform_inputs(x[..., self.continuous_cols])
+            covar_cont = self.cont_covar_module(x_cont)
+        # process categorical columns
         x_cat = x[..., self.categorical_cols]
         x_cat_long = x_cat.long()
         if torch.any(x_cat != x_cat_long):
             raise ValueError(
-                "Expected exact categorical column to have integer values,"
+                "Expected categorical columns to have integer values,"
                 f"got {x_cat} for categorical inputs."
             )
-        # compute over continuous features
-        mean = self.mean_module(x_cont)
-        covar_cont = self.cont_covar_module(x_cont)
         # compute covar over embedded features
         embeddings = [
             emb_layer(x_cat_long[..., i]) for i, emb_layer in enumerate(self.emb_layers)
@@ -233,5 +242,8 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         x_emb = torch.cat(embeddings, dim=-1)
         covar_emb = self.emb_covar_module(x_emb)
         # combine covariances together
-        covar = covar_cont.mul(covar_emb)
+        if self.has_continuous_cols:
+            covar = covar_cont.mul(covar_emb)
+        else:
+            covar = covar_emb
         return MultivariateNormal(mean, covar)

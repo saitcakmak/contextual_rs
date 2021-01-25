@@ -242,3 +242,62 @@ class TestLCEGP(BotorchTestCase):
         post = fm.posterior(test_x)
         self.assertEqual(post.mean.shape, torch.Size([*fm_batch, num_test, 1]))
         self.assertEqual(post.variance.shape, torch.Size([*fm_batch, num_test, 1]))
+
+    def test_only_categorical_inputs(self):
+        # testing the use case with purely categorical inputs
+        for dim, dtype in [(1, torch.float), (3, torch.double)]:
+            ckwargs = {"dtype": dtype}
+            num_train = 20
+            train_X = torch.randint(0, 4, size=(num_train, dim), **ckwargs)
+            train_X[:4, :] = torch.arange(0, 4).unsqueeze(-1).expand(-1, dim)
+            train_Y = torch.randn(num_train, 1, **ckwargs)
+            model = LCEGP(
+                train_X=train_X,
+                train_Y=train_Y,
+                categorical_cols=list(range(dim)),
+                embs_dim_list=list(range(1, dim + 1)),
+                outcome_transform=Standardize(m=1),
+            )
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_model(mll)
+
+            # test that the modules are setup correctly
+            self.assertFalse(model.has_continuous_cols)
+            self.assertEqual(model.emb_dims, [(4, i) for i in range(1, dim + 1)])
+            self.assertEqual(model.emb_covar_module.ard_num_dims, sum(range(dim + 1)))
+
+            # continuous inputs should fail
+            test_x = torch.rand(3, dim, **ckwargs)
+            with self.assertRaises(ValueError):
+                model.forward(test_x)
+
+            # batch forward evaluation
+            batch_shape = [5, 3]
+            num_test = 2
+            test_x = torch.randint(0, 4, size=(*batch_shape, num_test, dim), **ckwargs)
+            prior = model.forward(test_x)
+            self.assertEqual(prior.mean.shape, torch.Size([*batch_shape, num_test]))
+            self.assertEqual(
+                prior.lazy_covariance_matrix.shape,
+                torch.Size([*batch_shape, num_test, num_test]),
+            )
+
+            # posterior evaluation
+            post = model.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([*batch_shape, num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([*batch_shape, num_test, 1]))
+
+            # fantasize
+            fant_batch_size = 5
+            q = 2
+            fant_x = torch.randint(0, 4, size=(fant_batch_size, q, dim), **ckwargs)
+            n_f = 7
+            fm = model.fantasize(X=fant_x, sampler=IIDNormalSampler(n_f))
+            fm_batch = [n_f, fant_batch_size]
+            self.assertEqual(fm.train_inputs[0].shape, torch.Size([*fm_batch, 22, dim]))
+            self.assertEqual(fm.train_targets.shape, torch.Size([*fm_batch, 22]))
+            num_test = 4
+            test_x = torch.randint(0, 4, size=(*fm_batch, num_test, dim), **ckwargs)
+            post = fm.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([*fm_batch, num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([*fm_batch, num_test, 1]))
