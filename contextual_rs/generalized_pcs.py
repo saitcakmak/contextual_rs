@@ -50,14 +50,12 @@ def estimate_generalized_pcs(
     Returns:
         The estimate of the generalized PCS. Tensor of size `n`.
     """
-    # TODO: this is setup for use with SingleTaskGP. Analyzing whether it also works with LCEGP
     # input data verification
     assert arm_set.dim() == 2 and context_set.dim() == 2
     assert arm_set.shape[-1] + context_set.shape[-1] == candidate.shape[-1]
     if candidate.dim() < 3:
         candidate = candidate.unsqueeze(0)
     assert candidate.dim() == 3
-
 
     # define for future reference
     full_dim = candidate.shape[-1]

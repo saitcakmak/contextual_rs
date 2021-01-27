@@ -61,13 +61,10 @@ class TestGeneralizedPCS(BotorchTestCase):
             dim=-1,
         )
         # ensure each category is in the data
-        train_X[:3, 0] = torch.tensor([0., 1., 2.])
+        train_X[:3, 0] = torch.tensor([0.0, 1.0, 2.0])
         # construct and train the model
         model = LCEGP(
-            train_X,
-            torch.randn(num_train, 1),
-            categorical_cols=[0],
-            embs_dim_list=[2]
+            train_X, torch.randn(num_train, 1), categorical_cols=[0], embs_dim_list=[2]
         )
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_model(mll)

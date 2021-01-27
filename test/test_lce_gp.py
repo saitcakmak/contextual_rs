@@ -285,7 +285,9 @@ class TestLCEGP(BotorchTestCase):
             # posterior evaluation
             post = model.posterior(test_x)
             self.assertEqual(post.mean.shape, torch.Size([*batch_shape, num_test, 1]))
-            self.assertEqual(post.variance.shape, torch.Size([*batch_shape, num_test, 1]))
+            self.assertEqual(
+                post.variance.shape, torch.Size([*batch_shape, num_test, 1])
+            )
 
             # fantasize
             fant_batch_size = 5
