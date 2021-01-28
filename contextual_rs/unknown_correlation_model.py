@@ -1,3 +1,4 @@
+import math
 from typing import Callable, Optional, Union
 
 from scipy.stats import multivariate_t, t
@@ -9,16 +10,19 @@ from contextual_rs.rs_base_model import RSBaseModel
 
 class UnknownCorrelationModel(RSBaseModel):
     r"""
-    This is a placeholder for implementing the unknown correlations model
-    from Qu et.al. 2015 `Sequential Selection with Unknown Correlation Structures`.
+    References:
+        [1]: Qu et.al. 2015 "Sequential Selection with Unknown Correlation Structures"
+        [2]: Zhang and Song 2017 "Moment-Matching-Based Conjugacy Approximation for
+            Bayesian Ranking and Selection"
 
-    We may instead implement the alternative models by Zhang and Song 2017, which
-    are based on moment matching. These outperform the KL minimization approach of
-    Qu et.al. based on the numerical experiments presented in the paper. In addition,
-    they do not require a line search to find the parameters, which are available
-    in closed form.
+    This implements the moment-matching approximation presented in [2]_. In
+    numerical experiment, this model is shown to outperform the KL minimization
+    approach of [1]_. In addition, this does not require a line search to find
+    the parameters, which are available in closed form.
 
-    Current implementation is based on the moment matching approach.
+    The KL minimization method of [1]_ is also implemented, with the simplification
+    that \Delta b = 1/K. Choose between the two approaches by passing
+    `update_method` argument.
 
     This model assumes a normal-Wishart prior
 
@@ -27,8 +31,8 @@ class UnknownCorrelationModel(RSBaseModel):
         (\mathbf{\theta}^0, q^0 \mathbf{R}),
         \mathbf{R} \sim \mathcal{W}_K (b^0, \mathbf{B}^0)
 
-    Quoting from Qu et al, "If the prior parameters are constructed from
-    historical data, the diagonal entries of B^0 will be the sums of squared"
+    Quoting from [1]_, "If the prior parameters are constructed from
+    historical data, the diagonal entries of B^0 will be the sums of squared
     deviations of the first-stage observations from their means. The scalar
     b^0 is analogous to the size of the first-stage sample, so that
     B^0/(b0 − K +1) is precisely the empirical covariance matrix constructed
@@ -41,6 +45,7 @@ class UnknownCorrelationModel(RSBaseModel):
         self,
         train_X: Tensor,
         train_Y: Tensor,
+        update_method: str = "moment-matching",
     ) -> None:
         r"""
         A statistical model based on approximate Bayesian inference and
@@ -68,9 +73,14 @@ class UnknownCorrelationModel(RSBaseModel):
                 0, ..., n_alternatives - 1, with each alternative appearing
                 in each batch of the training data at least twice.
             train_Y: A `n`-dim tensor of training targets.
-
+            update_method: The updates used to get the approximate posterior.
+                Currently accepts only "moment-matching" and "KL".
         """
         super(UnknownCorrelationModel, self).__init__(train_X, train_Y)
+        # record the update method
+        if update_method not in ["moment-matching", "KL"]:
+            raise ValueError("Unknown update method!")
+        self.update_method = update_method
         # set the prior parameters
         self.theta = torch.zeros(self.num_alternatives).to(train_X)
         self.b = self.num_alternatives + 1.0
@@ -131,6 +141,8 @@ class UnknownCorrelationModel(RSBaseModel):
         If non-scalar X, Y are given, the method is called in a for loop,
         processing the samples one at a time.
 
+        Uses the specified update method.
+
         Args:
             X: A scalar tensor representing the alternative being sampled.
             Y: The corresponding observation, scalar tensor.
@@ -157,48 +169,64 @@ class UnknownCorrelationModel(RSBaseModel):
         b = self.b + (1 / K)
         # We need to index B in non-standard ways for updating theta and B
         # We will also define a number of intermediate values in the process.
-        # This operation is based on Proposition 3.2 of Zhang and Song 2017
         # If any variable is accessed from self, it is time n variable.
         # If it is accessed locally, then it is time n+1 variable.
-        q_tilde = 1 + (self.q * (Y - self.theta[k]).pow(2)) / (
-            (self.q + 1) * self.B[k, k]
-        )
-        # eq 20
-        theta = self.theta + (self.B[:, k] / self.B[k, k]) * (Y - self.theta[k]) / (
-            self.q + 1
-        )
-        # Bn_mkmk is B^n -k -k
-        mk_mask = torch.ones(int_K, device=X.device, dtype=torch.bool)
-        mk_mask[k] = 0
-        mk_mk_mask = mk_mask.unsqueeze(-1) * mk_mask
-        Bn_mkmk = self.B[mk_mk_mask].reshape(int_K - 1, int_K - 1)
-        # tmp_term is B^n -k,k * B^n k, -k  / B^n k, k
-        tmp_term = (self.B[mk_mask, k].unsqueeze(-1) * self.B[k, mk_mask]) / self.B[
-            k, k
-        ]
-        # Bn_mkmidk is B^n -k|k
-        Bn_mkmidk = Bn_mkmk - tmp_term
-        # eq 21, B_mkmk, being B^n+1 -k, -k
-        B_mkmk = (
-            (q * (b - K - 1))
-            / (self.b - K)
-            * (
-                Bn_mkmidk / self.q
-                + q_tilde / (self.q + 1) * (Bn_mkmidk / (self.b - K) + tmp_term)
+        if self.update_method == "moment-matching":
+            # This operation is based on Proposition 3.2 of [2]_
+            q_tilde = 1 + (self.q * (Y - self.theta[k]).pow(2)) / (
+                (self.q + 1) * self.B[k, k]
             )
-        )
-        # tmp factor is the term common in eq 22 & 23
-        tmp_factor = (q * (b - K - 1) * q_tilde) / ((self.q + 1) * (self.b - K))
-        # eq 22, B_mkk as B^n+1 -k, k. B_kmk is simply the transpose of this.
-        B_mkk = tmp_factor * self.B[mk_mask, k].unsqueeze(-1)
-        # eq 23
-        B_kk = tmp_factor * self.B[k, k]
-        # putting all together
-        B = torch.zeros_like(self.B)
-        B[mk_mk_mask] = B_mkmk.view(-1)
-        B[mk_mask, k] = B_mkk.view(-1)
-        B[k, mk_mask] = B_mkk.view(-1)
-        B[k, k] = B_kk
+            # eq 20
+            theta = self.theta + (self.B[:, k] / self.B[k, k]) * (Y - self.theta[k]) / (
+                self.q + 1
+            )
+            # Bn_mkmk is B^n -k -k
+            mk_mask = torch.ones(int_K, device=X.device, dtype=torch.bool)
+            mk_mask[k] = 0
+            mk_mk_mask = mk_mask.unsqueeze(-1) * mk_mask
+            Bn_mkmk = self.B[mk_mk_mask].reshape(int_K - 1, int_K - 1)
+            # tmp_term is B^n -k,k * B^n k, -k  / B^n k, k
+            tmp_term = (self.B[mk_mask, k].unsqueeze(-1) * self.B[k, mk_mask]) / self.B[
+                k, k
+            ]
+            # Bn_mkmidk is B^n -k|k
+            Bn_mkmidk = Bn_mkmk - tmp_term
+            # eq 21, B_mkmk, being B^n+1 -k, -k
+            B_mkmk = (
+                (q * (b - K - 1))
+                / (self.b - K)
+                * (
+                    Bn_mkmidk / self.q
+                    + q_tilde / (self.q + 1) * (Bn_mkmidk / (self.b - K) + tmp_term)
+                )
+            )
+            # tmp factor is the term common in eq 22 & 23
+            tmp_factor = (q * (b - K - 1) * q_tilde) / ((self.q + 1) * (self.b - K))
+            # eq 22, B_mkk as B^n+1 -k, k. B_kmk is simply the transpose of this.
+            B_mkk = tmp_factor * self.B[mk_mask, k].unsqueeze(-1)
+            # eq 23
+            B_kk = tmp_factor * self.B[k, k]
+            # putting all together
+            B = torch.zeros_like(self.B)
+            B[mk_mk_mask] = B_mkmk.view(-1)
+            B[mk_mask, k] = B_mkk.view(-1)
+            B[k, mk_mask] = B_mkk.view(-1)
+            B[k, k] = B_kk
+        elif self.update_method == "KL":
+            # based on eq 18 and 13 of [1]_
+            # this is eq 18
+            tmp_factor = (Y - self.theta[k]) / (
+                ((self.q * b) / (b - K + 1) + 1) * self.B[k, k]
+            )
+            theta = self.theta + tmp_factor * self.B[:, k]
+            # eq 13
+            tmp_factor = self.q * (Y - self.theta[k]).pow(2) / (
+                ((self.q * b) / (b - K + 1)) + 1
+            ) - self.B[k, k] / self.b
+            tmp_col = self.B[:, k].unsqueeze(-1)
+            tmp_factor_2 = tmp_col.matmul(tmp_col.t()) / self.B[k, k].pow(2)
+            assert tmp_factor_2.shape == torch.Size([int_K, int_K])
+            B = (b / self.b) * self.B + (b / (self.b + 1)) * tmp_factor * tmp_factor_2
         # update the self params
         self.b = b
         self.q = q
@@ -235,3 +263,57 @@ class UnknownCorrelationModel(RSBaseModel):
             )
         scale = (self.q * df / ((self.q + 1) * self.B[X_l, X_l])).sqrt()
         return t(loc=self.theta[X_l], scale=scale, df=df)
+
+    def get_s_tilde(self, X: Optional[Tensor]) -> Tensor:
+        r"""
+        Calculate the value of s_tilde for use in KG computations.
+        The precise term we calculate here is given in Section 4 of [2]_.
+        Additional discussion on s_tilde can be found in Section 3 of [1]_.
+
+        s_tilde can be used with a T random variable (with df = b - K + 1)
+        to predict the mu^(n+1) in KG as \theta + s_tilde T.
+
+        This supports both the moment-matching approach of [2]_ and the
+        KL minimization approach of [1]_.
+
+        Args:
+            X: A scalar tensor of alternative to get s_tilde for. If None,
+                s_tilde is returned for all alternatives.
+
+        Returns:
+            The value of s_tilde. If the alternative is specified, this is a
+            tensor of shape `num_alternatives`. Otherwise, it is a tensor of
+            shape `num_alternatives x num_alternatives`, with s_tilde[i]
+            corresponding to s_tilde for i-th alternative.
+        """
+        if self.update_method == "moment-matching":
+            common_factor = self.q * (self.q + 1) * (self.b - self.num_alternatives + 1)
+        else:
+            b_new = self.b + 1.0 / self.num_alternatives
+            common_factor = math.sqrt((self.q + 1) / (self.q * (self.b - self.num_alternatives + 1.0))) / (
+                (self.q * b_new) / (b_new - self.num_alternatives + 1) + 1
+            )
+        if X is None:
+            expanded_diag = self.B.diag().expand(self.num_alternatives, -1).t()
+            if self.update_method == "moment-matching":
+                s_tilde = self.B / (
+                        common_factor * expanded_diag
+                ).sqrt()
+            elif self.update_method == "KL":
+                s_tilde = common_factor * self.B / expanded_diag.sqrt()
+        else:
+            X_l = X.long()
+            if torch.any(X != X_l):
+                raise ValueError(
+                    "Inputs must be integers from range 0, ..., n_alternatives - 1!"
+                )
+            if X_l.numel() > 1:
+                raise NotImplementedError(
+                    "This only supports posterior from a single alternative at a time."
+                )
+            if self.update_method == "moment-matching":
+                s_tilde = self.B[:, X_l] / (common_factor * self.B[X_l, X_l]).sqrt()
+            elif self.update_method == "KL":
+                s_tilde = common_factor * self.B[:, X_l] / self.B[X_l, X_l].sqrt()
+        return s_tilde
+
