@@ -4,9 +4,32 @@ from botorch import fit_gpytorch_model
 from botorch.models.transforms import Normalize, Standardize
 from botorch.sampling import IIDNormalSampler
 from gpytorch.mlls import ExactMarginalLogLikelihood
+from torch.distributions import MultivariateNormal
 
 from contextual_rs.lce_gp import LCEGP
 from test.utils import BotorchTestCase
+
+
+def _get_sample_model(**ckwargs) -> LCEGP:
+    num_train = 12
+    dim_cont = 3
+    train_X = torch.cat(
+        [
+            torch.rand(num_train, dim_cont, **ckwargs),
+            torch.arange(0, num_train).unsqueeze(-1).to(**ckwargs),
+            torch.tensor([0, 1, 2, 3, 4, 5], **ckwargs).repeat(2).unsqueeze(-1),
+            torch.tensor([0, 1, 2], **ckwargs).repeat(5)[:num_train].unsqueeze(-1),
+        ],
+        dim=-1,
+    )
+    train_Y = torch.randn(num_train, 1)
+    model = LCEGP(
+        train_X=train_X,
+        train_Y=train_Y,
+        categorical_cols=[-3, -2, -1],
+        embs_dim_list=[3, 2, 1],
+    )
+    return model
 
 
 class TestLCEGP(BotorchTestCase):
@@ -140,30 +163,9 @@ class TestLCEGP(BotorchTestCase):
 
             # TODO: batch training inputs?
 
-    def _get_sample_model(self, **ckwargs) -> LCEGP:
-        num_train = 12
-        dim_cont = 3
-        train_X = torch.cat(
-            [
-                torch.rand(num_train, dim_cont, **ckwargs),
-                torch.arange(0, num_train).unsqueeze(-1).to(**ckwargs),
-                torch.tensor([0, 1, 2, 3, 4, 5], **ckwargs).repeat(2).unsqueeze(-1),
-                torch.tensor([0, 1, 2], **ckwargs).repeat(5)[:num_train].unsqueeze(-1),
-            ],
-            dim=-1,
-        )
-        train_Y = torch.randn(num_train, 1)
-        model = LCEGP(
-            train_X=train_X,
-            train_Y=train_Y,
-            categorical_cols=[-3, -2, -1],
-            embs_dim_list=[3, 2, 1],
-        )
-        return model
-
     def test_forward(self):
         ckwargs = {"dtype": torch.double}
-        model = self._get_sample_model(**ckwargs)
+        model = _get_sample_model(**ckwargs)
         dim = 6
         num_test = 2
         test_x = torch.rand(num_test, dim, **ckwargs)
@@ -190,7 +192,7 @@ class TestLCEGP(BotorchTestCase):
     def test_posterior(self):
         # TODO: maybe a good idea to add tests verifying output values
         ckwargs = {"dtype": torch.double}
-        model = self._get_sample_model(**ckwargs)
+        model = _get_sample_model(**ckwargs)
         dim = 6
         num_test = 4
         test_x = torch.rand(num_test, dim, **ckwargs)
@@ -207,7 +209,7 @@ class TestLCEGP(BotorchTestCase):
 
     def test_fantasize(self):
         ckwargs = {"dtype": torch.double}
-        model = self._get_sample_model(**ckwargs)
+        model = _get_sample_model(**ckwargs)
         dim = 6
         q = 2
         fant_x = torch.rand(q, dim, **ckwargs)
@@ -303,3 +305,53 @@ class TestLCEGP(BotorchTestCase):
             post = fm.posterior(test_x)
             self.assertEqual(post.mean.shape, torch.Size([*fm_batch, num_test, 1]))
             self.assertEqual(post.variance.shape, torch.Size([*fm_batch, num_test, 1]))
+
+    def test_asymptotic(self):
+        # testing asymptotic convergence to the true distribution
+        # This considers only a small number of categorical inputs.
+        torch.manual_seed(10)
+        ckwargs = {"dtype": torch.double}
+        true_mean = torch.tensor([0.1, 0.3, 0.6, 0.9], **ckwargs)
+        true_cov = (
+            torch.tensor(
+                [
+                    [1.0, 0.5, 0.3, 0.1],
+                    [0.5, 0.9, 0.3, 0.2],
+                    [0.3, 0.3, 1.2, 0.4],
+                    [0.1, 0.2, 0.4, 0.8],
+                ],
+                **ckwargs
+            )
+            * 0.1
+        )
+        true_dist = MultivariateNormal(loc=true_mean, covariance_matrix=true_cov)
+
+        # fit model on a large number of inputs
+        num_train = 100
+        train_X = torch.arange(4, **ckwargs).repeat(num_train).view(-1, 1)
+        train_Y = true_dist.rsample(torch.Size([num_train])).view(-1, 1)
+        model = LCEGP(train_X, train_Y, categorical_cols=[0], embs_dim_list=[2])
+        mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        fit_gpytorch_model(mll)
+
+        # check how good of a job posterior doing in estimating the true dist
+        post = model.posterior(torch.arange(4, **ckwargs))
+        self.assertTrue(
+            torch.allclose(
+                post.mean.view(-1),
+                true_mean,
+                atol=3e-2,
+            )
+        )
+        # The posterior here is the predictive distribution for the posterior mean.
+        # Thus, it will not converge to the `true_cov` covariance matrix.
+        # We could get the posterior with observation noise, but since it assumes
+        # homoscedastic noise in the likelihood, this will not recover the
+        # true covariance matrix either. So, we're ignoring this test.
+        # self.assertTrue(
+        #     torch.allclose(
+        #         post.mvn.covariance_matrix,
+        #         true_cov,
+        #         atol=1e-2,
+        #     )
+        # )
