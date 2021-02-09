@@ -1,3 +1,5 @@
+from itertools import product
+
 import gpytorch
 import torch
 from botorch import fit_gpytorch_model
@@ -33,9 +35,13 @@ def _get_sample_model(**ckwargs) -> LCEGP:
 
 
 class TestLCEGP(BotorchTestCase):
+    def setUp(self):
+        self.device_list = ["cpu"] + ["cuda"] if torch.cuda.is_available() else []
+        self.dtype_list = [torch.float, torch.double]
+
     def test_constructor(self):
-        for dtype in (torch.float, torch.double):
-            ckwargs = {"dtype": dtype}
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
             # test input checks with categorical_cols
             with self.assertRaises(RuntimeError):
                 _ = LCEGP(None, None, [])
@@ -164,91 +170,94 @@ class TestLCEGP(BotorchTestCase):
             # TODO: batch training inputs?
 
     def test_forward(self):
-        ckwargs = {"dtype": torch.double}
-        model = _get_sample_model(**ckwargs)
-        dim = 6
-        num_test = 2
-        test_x = torch.rand(num_test, dim, **ckwargs)
-        with self.assertRaises(ValueError):
-            model.forward(test_x)
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            model = _get_sample_model(**ckwargs)
+            dim = 6
+            num_test = 2
+            test_x = torch.rand(num_test, dim, **ckwargs)
+            with self.assertRaises(ValueError):
+                model.forward(test_x)
 
-        test_x[:, -3:] = 0
-        prior = model.forward(test_x)
-        self.assertEqual(prior.mean.shape, torch.Size([num_test]))
-        self.assertEqual(
-            prior.lazy_covariance_matrix.shape, torch.Size([num_test, num_test])
-        )
+            test_x[:, -3:] = 0
+            prior = model.forward(test_x)
+            self.assertEqual(prior.mean.shape, torch.Size([num_test]))
+            self.assertEqual(
+                prior.lazy_covariance_matrix.shape, torch.Size([num_test, num_test])
+            )
 
-        # batch evaluation
-        batch_shape = [5, 3]
-        test_x = test_x.expand(*batch_shape, -1, -1)
-        prior = model.forward(test_x)
-        self.assertEqual(prior.mean.shape, torch.Size([*batch_shape, num_test]))
-        self.assertEqual(
-            prior.lazy_covariance_matrix.shape,
-            torch.Size([*batch_shape, num_test, num_test]),
-        )
+            # batch evaluation
+            batch_shape = [5, 3]
+            test_x = test_x.expand(*batch_shape, -1, -1)
+            prior = model.forward(test_x)
+            self.assertEqual(prior.mean.shape, torch.Size([*batch_shape, num_test]))
+            self.assertEqual(
+                prior.lazy_covariance_matrix.shape,
+                torch.Size([*batch_shape, num_test, num_test]),
+            )
 
     def test_posterior(self):
         # TODO: maybe a good idea to add tests verifying output values
-        ckwargs = {"dtype": torch.double}
-        model = _get_sample_model(**ckwargs)
-        dim = 6
-        num_test = 4
-        test_x = torch.rand(num_test, dim, **ckwargs)
-        test_x[:, -3:] = torch.tensor([0.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
-        post = model.posterior(test_x)
-        self.assertEqual(post.mean.shape, torch.Size([num_test, 1]))
-        self.assertEqual(post.variance.shape, torch.Size([num_test, 1]))
-        # with batch input
-        batch_shape = [3, 6, 2]
-        test_x = test_x.expand(*batch_shape, -1, -1)
-        post = model.posterior(test_x)
-        self.assertEqual(post.mean.shape, torch.Size([*batch_shape, num_test, 1]))
-        self.assertEqual(post.variance.shape, torch.Size([*batch_shape, num_test, 1]))
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            model = _get_sample_model(**ckwargs)
+            dim = 6
+            num_test = 4
+            test_x = torch.rand(num_test, dim, **ckwargs)
+            test_x[:, -3:] = torch.tensor([0.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
+            post = model.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([num_test, 1]))
+            # with batch input
+            batch_shape = [3, 6, 2]
+            test_x = test_x.expand(*batch_shape, -1, -1)
+            post = model.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([*batch_shape, num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([*batch_shape, num_test, 1]))
 
     def test_fantasize(self):
-        ckwargs = {"dtype": torch.double}
-        model = _get_sample_model(**ckwargs)
-        dim = 6
-        q = 2
-        fant_x = torch.rand(q, dim, **ckwargs)
-        fant_x[:, -3:] = torch.tensor([0.0, 1.0, 0.0], **ckwargs).repeat(q, 1)
-        n_f = 3
-        fm = model.fantasize(X=fant_x, sampler=IIDNormalSampler(n_f))
-        self.assertEqual(fm.train_inputs[0].shape, torch.Size([n_f, 14, dim]))
-        self.assertEqual(fm.train_targets.shape, torch.Size([n_f, 14]))
-        num_test = 4
-        test_x = torch.rand(num_test, dim, **ckwargs)
-        test_x[..., -3:] = torch.tensor([2.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
-        post = fm.posterior(test_x)
-        self.assertEqual(post.mean.shape, torch.Size([n_f, num_test, 1]))
-        self.assertEqual(post.variance.shape, torch.Size([n_f, num_test, 1]))
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            model = _get_sample_model(**ckwargs)
+            dim = 6
+            q = 2
+            fant_x = torch.rand(q, dim, **ckwargs)
+            fant_x[:, -3:] = torch.tensor([0.0, 1.0, 0.0], **ckwargs).repeat(q, 1)
+            n_f = 3
+            fm = model.fantasize(X=fant_x, sampler=IIDNormalSampler(n_f))
+            self.assertEqual(fm.train_inputs[0].shape, torch.Size([n_f, 14, dim]))
+            self.assertEqual(fm.train_targets.shape, torch.Size([n_f, 14]))
+            num_test = 4
+            test_x = torch.rand(num_test, dim, **ckwargs)
+            test_x[..., -3:] = torch.tensor([2.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
+            post = fm.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([n_f, num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([n_f, num_test, 1]))
 
-        # fantasize on batch candidates
-        fant_batch_size = 5
-        fant_x = fant_x.repeat(fant_batch_size, 1, 1)
-        fant_x[..., :-3] += torch.randn(*fant_x.shape[:-1], 3, **ckwargs) * 0.1
-        fm = model.fantasize(X=fant_x, sampler=IIDNormalSampler(n_f))
-        fm_batch = [n_f, fant_batch_size]
-        self.assertEqual(fm.train_inputs[0].shape, torch.Size([*fm_batch, 14, dim]))
-        self.assertEqual(fm.train_targets.shape, torch.Size([*fm_batch, 14]))
-        num_test = 4
-        test_x = torch.cat(
-            [
-                torch.rand(*fm_batch, num_test, 3, **ckwargs),
-                torch.randint(0, 3, (*fm_batch, num_test, 3), **ckwargs),
-            ],
-            dim=-1,
-        )
-        post = fm.posterior(test_x)
-        self.assertEqual(post.mean.shape, torch.Size([*fm_batch, num_test, 1]))
-        self.assertEqual(post.variance.shape, torch.Size([*fm_batch, num_test, 1]))
+            # fantasize on batch candidates
+            fant_batch_size = 5
+            fant_x = fant_x.repeat(fant_batch_size, 1, 1)
+            fant_x[..., :-3] += torch.randn(*fant_x.shape[:-1], 3, **ckwargs) * 0.1
+            fm = model.fantasize(X=fant_x, sampler=IIDNormalSampler(n_f))
+            fm_batch = [n_f, fant_batch_size]
+            self.assertEqual(fm.train_inputs[0].shape, torch.Size([*fm_batch, 14, dim]))
+            self.assertEqual(fm.train_targets.shape, torch.Size([*fm_batch, 14]))
+            num_test = 4
+            test_x = torch.cat(
+                [
+                    torch.rand(*fm_batch, num_test, 3, **ckwargs),
+                    torch.randint(0, 3, (*fm_batch, num_test, 3), **ckwargs),
+                ],
+                dim=-1,
+            )
+            post = fm.posterior(test_x)
+            self.assertEqual(post.mean.shape, torch.Size([*fm_batch, num_test, 1]))
+            self.assertEqual(post.variance.shape, torch.Size([*fm_batch, num_test, 1]))
 
     def test_only_categorical_inputs(self):
         # testing the use case with purely categorical inputs
-        for dim, dtype in [(1, torch.float), (3, torch.double)]:
-            ckwargs = {"dtype": dtype}
+        for dim, dtype, device in product((1, 3), self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
             num_train = 20
             train_X = torch.randint(0, 4, size=(num_train, dim), **ckwargs)
             train_X[:4, :] = torch.arange(0, 4).unsqueeze(-1).expand(-1, dim)
@@ -309,49 +318,52 @@ class TestLCEGP(BotorchTestCase):
     def test_asymptotic(self):
         # testing asymptotic convergence to the true distribution
         # This considers only a small number of categorical inputs.
-        torch.manual_seed(10)
-        ckwargs = {"dtype": torch.double}
-        true_mean = torch.tensor([0.1, 0.3, 0.6, 0.9], **ckwargs)
-        true_cov = (
-            torch.tensor(
-                [
-                    [1.0, 0.5, 0.3, 0.1],
-                    [0.5, 0.9, 0.3, 0.2],
-                    [0.3, 0.3, 1.2, 0.4],
-                    [0.1, 0.2, 0.4, 0.8],
-                ],
-                **ckwargs
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            torch.manual_seed(20)
+            true_mean = torch.tensor([0.1, 0.3, 0.6, 0.9], **ckwargs)
+            true_cov = (
+                torch.tensor(
+                    [
+                        [1.0, 0.5, 0.3, 0.1],
+                        [0.5, 0.9, 0.3, 0.2],
+                        [0.3, 0.3, 1.2, 0.4],
+                        [0.1, 0.2, 0.4, 0.8],
+                    ],
+                    **ckwargs
+                )
+                * 0.1
             )
-            * 0.1
-        )
-        true_dist = MultivariateNormal(loc=true_mean, covariance_matrix=true_cov)
+            true_dist = MultivariateNormal(loc=true_mean, covariance_matrix=true_cov)
 
-        # fit model on a large number of inputs
-        num_train = 100
-        train_X = torch.arange(4, **ckwargs).repeat(num_train).view(-1, 1)
-        train_Y = true_dist.rsample(torch.Size([num_train])).view(-1, 1)
-        model = LCEGP(train_X, train_Y, categorical_cols=[0], embs_dim_list=[2])
-        mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_model(mll)
+            # fit model on a large number of inputs
+            num_train = 100
+            train_X = torch.arange(4, **ckwargs).repeat(num_train).view(-1, 1)
+            train_Y = true_dist.rsample(torch.Size([num_train])).view(-1, 1)
+            model = LCEGP(train_X, train_Y, categorical_cols=[0], embs_dim_list=[3])
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_model(mll)
 
-        # check how good of a job posterior doing in estimating the true dist
-        post = model.posterior(torch.arange(4, **ckwargs))
-        self.assertTrue(
-            torch.allclose(
-                post.mean.view(-1),
-                true_mean,
-                atol=3e-2,
+            empirical_mean = train_Y.view(-1, 4).mean(dim=0)
+
+            # check how good of a job posterior is doing in estimating the true dist
+            post = model.posterior(torch.arange(4, **ckwargs).view(-1, 1))
+            self.assertTrue(
+                torch.allclose(
+                    post.mean.view(-1),
+                    empirical_mean,
+                    atol=3e-2,
+                )
             )
-        )
-        # The posterior here is the predictive distribution for the posterior mean.
-        # Thus, it will not converge to the `true_cov` covariance matrix.
-        # We could get the posterior with observation noise, but since it assumes
-        # homoscedastic noise in the likelihood, this will not recover the
-        # true covariance matrix either. So, we're ignoring this test.
-        # self.assertTrue(
-        #     torch.allclose(
-        #         post.mvn.covariance_matrix,
-        #         true_cov,
-        #         atol=1e-2,
-        #     )
-        # )
+            # The posterior here is the predictive distribution for the posterior mean.
+            # Thus, it will not converge to the `true_cov` covariance matrix.
+            # We could get the posterior with observation noise, but since it assumes
+            # homoscedastic noise in the likelihood, this will not recover the
+            # true covariance matrix either. So, we're ignoring this test.
+            # self.assertTrue(
+            #     torch.allclose(
+            #         post.mvn.covariance_matrix,
+            #         true_cov,
+            #         atol=1e-2,
+            #     )
+            # )
