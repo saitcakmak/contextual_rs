@@ -1,8 +1,8 @@
 import math
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
-from scipy.stats import multivariate_t, t
 import torch
+from scipy.stats import multivariate_t, t
 from torch import Tensor
 
 from contextual_rs.rs_base_model import RSBaseModel
@@ -185,9 +185,10 @@ class UnknownCorrelationModel(RSBaseModel):
             )
             theta = self.theta + tmp_factor * self.B[:, k]
             # eq 13
-            tmp_factor = self.q * (Y - self.theta[k]).pow(2) / (
-                ((self.q * b) / (b - K + 1)) + 1
-            ) - self.B[k, k] / self.b
+            tmp_factor = (
+                self.q * (Y - self.theta[k]).pow(2) / (((self.q * b) / (b - K + 1)) + 1)
+                - self.B[k, k] / self.b
+            )
             tmp_col = self.B[:, k].unsqueeze(-1)
             tmp_factor_2 = tmp_col.matmul(tmp_col.t()) / self.B[k, k].pow(2)
             B = (b / self.b) * self.B + (b / (self.b + 1)) * tmp_factor * tmp_factor_2
@@ -195,7 +196,7 @@ class UnknownCorrelationModel(RSBaseModel):
             # first some common terms between moment-matching and moment-KL
             # eq 20
             theta = self.theta + (self.B[:, k] / self.B[k, k]) * (Y - self.theta[k]) / (
-                    self.q + 1
+                self.q + 1
             )
             # Bn_mkmk is B^n -k -k
             mk_mask = torch.ones(int_K, device=X.device, dtype=torch.bool)
@@ -232,7 +233,7 @@ class UnknownCorrelationModel(RSBaseModel):
                 # eq 27
                 tmp_factor = q * (b - K + 1) / ((self.b + 1) * (self.q + 1))
                 B_kk = tmp_factor * (
-                        self.B[k, k] + (self.q / (self.q + 1)) * (Y - self.theta[k]).pow(2)
+                    self.B[k, k] + (self.q / (self.q + 1)) * (Y - self.theta[k]).pow(2)
                 )
                 # eq 28
                 B_mkk = B_kk * self.B[mk_mask, k] / self.B[k, k]
@@ -307,15 +308,13 @@ class UnknownCorrelationModel(RSBaseModel):
             common_factor = self.q * (self.q + 1) * (self.b - self.num_alternatives + 1)
         elif self.update_method == "KL":
             b_new = self.b + 1.0 / self.num_alternatives
-            common_factor = math.sqrt((self.q + 1) / (self.q * (self.b - self.num_alternatives + 1.0))) / (
-                (self.q * b_new) / (b_new - self.num_alternatives + 1) + 1
-            )
+            common_factor = math.sqrt(
+                (self.q + 1) / (self.q * (self.b - self.num_alternatives + 1.0))
+            ) / ((self.q * b_new) / (b_new - self.num_alternatives + 1) + 1)
         if X is None:
             expanded_diag = self.B.diag().expand(self.num_alternatives, -1).t()
             if self.update_method in ["moment-matching", "moment-KL"]:
-                s_tilde = self.B / (
-                        common_factor * expanded_diag
-                ).sqrt()
+                s_tilde = self.B / (common_factor * expanded_diag).sqrt()
             elif self.update_method == "KL":
                 s_tilde = common_factor * self.B / expanded_diag.sqrt()
         else:
@@ -334,3 +333,9 @@ class UnknownCorrelationModel(RSBaseModel):
                 s_tilde = common_factor * self.B[:, X_l] / self.B[X_l, X_l].sqrt()
         return s_tilde
 
+    def predictive_df(self) -> float:
+        r"""
+        Returns df = b - K + 1 for generating the T random variable for use with
+        s_tilde for KG calculations.
+        """
+        return self.b - self.num_alternatives + 1.0

@@ -13,7 +13,9 @@ class TestUnknownCorrelationModel(BotorchTestCase):
         Y = torch.rand_like(X)
         with self.assertRaises(ValueError):
             model = UnknownCorrelationModel(X, Y, "mm")
-        for dtype, update in product([torch.float, torch.double], ["moment-matching", "KL", "moment-KL"]):
+        for dtype, update in product(
+            [torch.float, torch.double], ["moment-matching", "KL", "moment-KL"]
+        ):
             ckwargs = {"dtype": dtype}
             # testing with 4 categories.
             y_0 = torch.rand(3, **ckwargs) + 1
@@ -78,6 +80,10 @@ class TestUnknownCorrelationModel(BotorchTestCase):
             self.assertTrue(post.kwds["loc"] == model.theta[0])
             self.assertTrue(post.kwds["scale"] == scale)
             self.assertEqual(post.kwds["df"], df)
+
+            # test predictive df
+            df = model.predictive_df()
+            self.assertEqual(df, model.b - 3.0)
 
     def test_asymptotic(self):
         # an asymptotic test to ensure that everything works
@@ -146,7 +152,9 @@ class TestUnknownCorrelationModel(BotorchTestCase):
         for update in ["moment-matching", "KL", "moment-KL"]:
             model = UnknownCorrelationModel(X, Y, update_method=update)
             # verify that the two modes of getting s_tilde agree
-            s_tilde_list = [model.get_s_tilde(torch.tensor(i, **ckwargs)) for i in range(4)]
+            s_tilde_list = [
+                model.get_s_tilde(torch.tensor(i, **ckwargs)) for i in range(4)
+            ]
             s_tilde_full = model.get_s_tilde(None)
             self.assertTrue(
                 all([torch.equal(s_tilde_full[i], s_tilde_list[i]) for i in range(4)])

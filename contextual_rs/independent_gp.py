@@ -86,3 +86,13 @@ class IndependentGP(RSBaseModel):
         #   This requires batch support!
         raise NotImplementedError
         # return self.condition_on_observations(X=X, Y=Y_fantasized, **kwargs)
+
+    # TODO: Thinking of a method corresponding to s_tilde here.
+    #   So, s_tilde is technically equivalent to reduction in predictive uncertainty
+    #   from the observation, i.e., it is sigma^2_{n+1} - sigma^2_n.
+    #   To calculate this difference, we would need to know sigma^2_{n+1}
+    #   If the sampling error is known, this can be calculated.
+    #   The R code by [2]_ has some code where they do this.
+    #   The original KG paper with independent observations does not have any
+    #   examples where observation noise is not known. This suggests that it may
+    #   not work without knowing the observation noise.
