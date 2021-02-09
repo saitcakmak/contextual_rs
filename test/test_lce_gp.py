@@ -35,10 +35,6 @@ def _get_sample_model(**ckwargs) -> LCEGP:
 
 
 class TestLCEGP(BotorchTestCase):
-    def setUp(self):
-        self.device_list = ["cpu"] + ["cuda"] if torch.cuda.is_available() else []
-        self.dtype_list = [torch.float, torch.double]
-
     def test_constructor(self):
         for dtype, device in product(self.dtype_list, self.device_list):
             ckwargs = {"dtype": dtype, "device": device}

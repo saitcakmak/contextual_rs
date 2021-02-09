@@ -1,10 +1,10 @@
 import torch
-from botorch.models import SingleTaskGP
 from botorch.sampling import SobolQMCNormalSampler
 from botorch import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from torch import Tensor
 
+from contextual_rs.custom_fit import custom_fit_gpytorch_model
 from contextual_rs.pcs_no_context import (
     estimate_lookahead_pcs_no_context,
     estimate_current_pcs_no_context,
@@ -80,6 +80,7 @@ class TestPCSNoContext(BotorchTestCase):
             return sine + noise
 
         torch.manual_seed(0)
+        num_fit = 5
         num_arms = 10
         num_train = 5
         num_samples = 100
@@ -90,7 +91,7 @@ class TestPCSNoContext(BotorchTestCase):
             train_X, sine_test(train_X), categorical_cols=[0], embs_dim_list=[2]
         )
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_model(mll)
+        custom_fit_gpytorch_model(mll, num_retries=num_fit)
 
         # setup test inputs
         arm_set = torch.tensor(range(num_arms)).unsqueeze(-1)
@@ -111,7 +112,7 @@ class TestPCSNoContext(BotorchTestCase):
         self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
 
         # it should converge to 1 as we add more and more training samples
-        num_train = 100
+        num_train = 50
         train_X = torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
 
         # construct and train the model
@@ -119,7 +120,7 @@ class TestPCSNoContext(BotorchTestCase):
             train_X, sine_test(train_X), categorical_cols=[0], embs_dim_list=[2]
         )
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_model(mll)
+        custom_fit_gpytorch_model(mll, num_retries=num_fit)
         pcs2 = estimate_current_pcs_no_context(
             model=model,
             arm_set=arm_set,
@@ -132,9 +133,6 @@ class TestPCSNoContext(BotorchTestCase):
         # check that the values are probabilities, i.e., between 0 and 1
         self.assertTrue(torch.equal(pcs2, pcs2.clamp(min=0, max=1)))
 
-        # TODO: this is very inconsistent. Look into this!
-        #   Possibly the model training? The PCS logic works as intended.
-        #   LCEGP training is dependent on random initialization of the embedding.
-        #   This is a likely reason for the inconsistent behavior.
         # check that the pcs increased
         self.assertGreater(pcs2, pcs)
+        print(f"pcs2 {pcs2}, pcs {pcs}")
