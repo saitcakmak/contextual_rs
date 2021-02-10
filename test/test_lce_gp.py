@@ -4,7 +4,7 @@ import gpytorch
 import torch
 from botorch import fit_gpytorch_model
 from botorch.models.transforms import Normalize, Standardize
-from botorch.sampling import IIDNormalSampler
+from botorch.sampling import IIDNormalSampler, SobolQMCNormalSampler
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from torch.distributions import MultivariateNormal
 
@@ -363,3 +363,48 @@ class TestLCEGP(BotorchTestCase):
             #         atol=1e-2,
             #     )
             # )
+
+    def test_sigma_tilde(self):
+        for dtype, device in product(self.dtype_list, self.device_list):
+            torch.manual_seed(0)
+            ckwargs = {"dtype": dtype, "device": device}
+            # test non-RS type model error
+            model = _get_sample_model(**ckwargs)
+            with self.assertRaises(NotImplementedError):
+                model.get_s_tilde(None)
+
+            K = 4
+            train_X = torch.tensor(range(K), **ckwargs).repeat(10).view(-1, 1)
+            train_Y = torch.randn_like(train_X)
+            model = LCEGP(train_X, train_Y, [0])
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_model(mll)
+
+            # error check when X is non-scalar or non-integer
+            with self.assertRaises(ValueError):
+                model.get_s_tilde(torch.tensor([1., 2.], **ckwargs))
+            with self.assertRaises(ValueError):
+                model.get_s_tilde(torch.tensor([0.5], **ckwargs))
+
+            full_s_tilde = model.get_s_tilde(None)
+            self.assertEqual(full_s_tilde.shape, torch.Size([K, K]))
+
+            all_s_tilde = torch.zeros(K, K, **ckwargs)
+            for i in range(K):
+                all_s_tilde[i] = model.get_s_tilde(torch.tensor([i], **ckwargs))
+
+            # check that getting the all alternatives at once agrees
+            # with getting them one by one
+            self.assertTrue(torch.allclose(full_s_tilde, all_s_tilde, atol=1e-2))
+
+            # check that it agrees with `fantasize`
+            fm = model.fantasize(
+                torch.tensor([0], **ckwargs), SobolQMCNormalSampler(1000)
+            )
+            pm = model.posterior(train_X[:K]).mean
+            fm_pm = fm.posterior(train_X[:K]).mean
+            normalized = fm_pm - pm
+            empirical_s_tilde = normalized.std(dim=0).squeeze()
+            self.assertTrue(
+                torch.allclose(empirical_s_tilde, all_s_tilde[0].abs(), atol=1e-3)
+            )

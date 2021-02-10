@@ -247,3 +247,49 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         else:
             covar = covar_emb
         return MultivariateNormal(mean, covar)
+
+    def get_s_tilde(self, X: Optional[Tensor]) -> Tensor:
+        r"""
+        Calculate the value of s_tilde for use in KG computations.
+        The calculation is based on the following formula, borrowed from
+        Wu & Frazier 2016.
+
+        .. math::
+            \tilde{\sigma}(x, X) = K(x, X) / \sqrt{ K(X, X) + \diag(\sigma^2(X)) }
+
+        Note: below, we will use the vector of all alternatives for `x`.
+            When X is None, the sqrt becomes the Cholesky decomposition and
+            the division becomes matmul with the inverse matrix.
+
+        s_tilde can be used with a Z ~ N(0, 1) random variable
+        to predict the mu^(n+1) in KG as \theta + s_tilde Z.
+
+        Args:
+            X: A scalar tensor of alternative to get s_tilde for. If None,
+                s_tilde is returned for all alternatives.
+
+        Returns:
+            The value of s_tilde. If the alternative is specified, this is a
+            tensor of shape `num_alternatives`. Otherwise, it is a tensor of
+            shape `num_alternatives x num_alternatives`, with s_tilde[i]
+            corresponding to s_tilde for i-th alternative.
+        """
+        if len(self.categorical_cols) != 1 or self.continuous_cols != list():
+            raise NotImplementedError("This is defined only for the simple RS setting!")
+        all_alternatives = torch.tensor(
+            range(self.category_counts[0])
+        ).view(-1, 1).to(self.train_targets)
+        full_mvn = self(all_alternatives)
+        noise = self.likelihood.noise.squeeze()
+        if X is None:
+            covar = full_mvn.covariance_matrix
+            noisy_covar = covar + torch.diag(noise.expand(covar.shape[-1]))
+            noisy_root = torch.cholesky(noisy_covar, upper=True)
+            return covar.matmul(torch.inverse(noisy_root))
+        else:
+            X_l = X.long()
+            if X.numel() != 1 or X != X_l:
+                raise ValueError("X must be a scalar tensor with an integer value!")
+            K_x_X = full_mvn.covariance_matrix[:, X_l].view(-1)
+            second_term = (full_mvn.covariance_matrix[X_l, X_l] + noise).sqrt()
+            return K_x_X / second_term
