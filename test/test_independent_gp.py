@@ -6,7 +6,7 @@ from test.utils import BotorchTestCase
 class TestIndependentGP(BotorchTestCase):
     def test_independent_gp(self):
         # Note: this also tests RSBaseModel
-        for dtype in (torch.float, torch.double):
+        for dtype in self.dtype_list:
             ckwargs = {"dtype": dtype}
             # testing with 4 categories.
             y_0 = torch.rand(3, **ckwargs) + 1
@@ -84,6 +84,83 @@ class TestIndependentGP(BotorchTestCase):
                 torch.equal(post.covariance_matrix[1].diag(), model.vars[idcs[1]])
             )
 
-            # fantasize
-            with self.assertRaises(NotImplementedError):
-                model.fantasize(test_X, lambda X: X)
+    def test_add_new_observations(self):
+        for dtype in self.dtype_list:
+            ckwargs = {"dtype": dtype}
+            # testing with 4 categories.
+            y_0 = torch.rand(3, **ckwargs) + 1
+            y_1 = torch.rand(5, **ckwargs) + 3
+            y_2 = torch.rand(2, **ckwargs)
+            y_3 = torch.rand(3, **ckwargs) + 5
+            y_list = [y_0, y_1, y_2, y_3]
+            Y = torch.cat(y_list, dim=-1)
+            X = torch.tensor([0] * 3 + [1] * 5 + [2] * 2 + [3] * 3, **ckwargs)
+            model = IndependentGP(X, Y)
+
+            # check the original mean and std
+            self.assertTrue(
+                torch.equal(model.means, torch.cat([y.mean().view(-1) for y in y_list]))
+            )
+            self.assertTrue(
+                torch.equal(model.stds, torch.cat([y.std().view(-1) for y in y_list]))
+            )
+
+            # add new data, single point at first
+            model.add_samples(
+                torch.tensor([0.0], **ckwargs), torch.tensor([0.5], **ckwargs)
+            )
+            y_0 = torch.cat([y_0, torch.tensor([0.5], **ckwargs)])
+            y_list = [y_0, y_1, y_2, y_3]
+            # check the mean and std
+            self.assertTrue(
+                torch.equal(model.means, torch.cat([y.mean().view(-1) for y in y_list]))
+            )
+            self.assertTrue(
+                torch.equal(model.stds, torch.cat([y.std().view(-1) for y in y_list]))
+            )
+
+            # add three points
+            y_1_new = torch.rand(1, **ckwargs)
+            y_2_new = torch.rand(2, **ckwargs)
+            model.add_samples(
+                torch.tensor([1, 2, 2], **ckwargs), torch.cat([y_1_new, y_2_new])
+            )
+            y_1 = torch.cat([y_1, y_1_new])
+            y_2 = torch.cat([y_2, y_2_new])
+            y_list = [y_0, y_1, y_2, y_3]
+            # check the mean and std
+            self.assertTrue(
+                torch.equal(model.means, torch.cat([y.mean().view(-1) for y in y_list]))
+            )
+            self.assertTrue(
+                torch.equal(model.stds, torch.cat([y.std().view(-1) for y in y_list]))
+            )
+
+            # add a large number of new samples
+            # this should trigger the other side of the if/else block
+            y_1_new = torch.rand(10, **ckwargs)
+            y_2_new = torch.rand(20, **ckwargs)
+            model.add_samples(
+                torch.tensor([1] * 10 + [2] * 20, **ckwargs),
+                torch.cat([y_1_new, y_2_new]),
+            )
+            y_1 = torch.cat([y_1, y_1_new])
+            y_2 = torch.cat([y_2, y_2_new])
+            y_list = [y_0, y_1, y_2, y_3]
+            # check the mean and std
+            self.assertTrue(
+                torch.equal(model.means, torch.cat([y.mean().view(-1) for y in y_list]))
+            )
+            self.assertTrue(
+                torch.equal(model.stds, torch.cat([y.std().view(-1) for y in y_list]))
+            )
+
+            # test error checks
+            with self.assertRaisesRegex(AssertionError, "X and Y"):
+                model.add_samples(torch.rand(2, **ckwargs), torch.rand(1, **ckwargs))
+            with self.assertRaisesRegex(AssertionError, "one-dimensional"):
+                model.add_samples(
+                    torch.ones(5, 2, **ckwargs), torch.ones(5, 2, **ckwargs)
+                )
+            with self.assertRaisesRegex(ValueError, "must be integers"):
+                model.add_samples(torch.rand(3, **ckwargs), torch.rand(3, **ckwargs))

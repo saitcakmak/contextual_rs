@@ -56,43 +56,42 @@ class IndependentGP(RSBaseModel):
         covar = DiagLazyTensor(self.vars[X_l])
         return MultivariateNormal(mean, covar)
 
-    def fantasize(
-        self,
-        X: Tensor,
-        sampler: MCSampler,
-    ) -> IndependentGP:
-        r"""Construct a fantasy model.
-
-        Constructs a fantasy model in the following fashion:
-        (1) compute the model posterior at `X`
-        (2) sample from this posterior (using `sampler`) to generate "fake"
-        observations.
-        (3) condition the model on the new fake observations.
+    def add_samples(self, X: Tensor, Y: Tensor) -> None:
+        r"""
+        Updates the model by adding new samples. It is an efficient alternative
+        to re-constructing the model with full data.
 
         Args:
-            X: A `batch_shape x n' x d`-dim Tensor, where `d` is the dimension of
-                the feature space, `n'` is the number of points per batch, and
-                `batch_shape` is the batch shape (must be compatible with the
-                batch shape of the model). # TODO: decide on explicit input dimension
-            sampler: The sampler used for sampling from the posterior at `X`.
-
-        Returns:
-            The constructed fantasy model.
+            X: `n'`-dim tensor of inputs. Expected to be integers
+                in 0, ..., n_alternatives - 1.
+            Y: `n'`-dim tensor of observations.
         """
-        post_X = self.posterior(X)
-        Y_fantasized = sampler(post_X)  # num_fantasies x batch_shape x n' x m
-        # TODO: is that shape correct? - should be?
-        # TODO: implement condition on observations, or simply make this self-contained.
-        #   This requires batch support!
-        raise NotImplementedError
-        # return self.condition_on_observations(X=X, Y=Y_fantasized, **kwargs)
-
-    # TODO: Thinking of a method corresponding to s_tilde here.
-    #   So, s_tilde is technically equivalent to reduction in predictive uncertainty
-    #   from the observation, i.e., it is sigma^2_{n+1} - sigma^2_n.
-    #   To calculate this difference, we would need to know sigma^2_{n+1}
-    #   If the sampling error is known, this can be calculated.
-    #   The R code by [2]_ has some code where they do this.
-    #   The original KG paper with independent observations does not have any
-    #   examples where observation noise is not known. This suggests that it may
-    #   not work without knowing the observation noise.
+        assert X.shape == Y.shape, "X and Y must be of the same shape!"
+        assert X.dim() == 1, "X must be a one-dimensional tensor!"
+        X_l = X.long()
+        if torch.any(X != X_l) or torch.any(X_l > self.num_alternatives):
+            raise ValueError(
+                "Inputs must be integers from range 0, ..., n_alternatives - 1!"
+            )
+        # pick the loop based on the size of the input
+        if X_l.shape[0] < self.num_alternatives:
+            # loop over the inputs, add them one by one
+            for x, y in zip(X_l, Y):
+                self.alternative_observations[x] = torch.cat(
+                    [self.alternative_observations[x], y.view(-1)]
+                )
+                self.means[x] = self.alternative_observations[x].mean()
+                self.stds[x] = self.alternative_observations[x].std()
+                self.vars[x] = self.stds[x].pow(2)
+        else:
+            # loop over alternatives, add if there are observations
+            for i in range(self.num_alternatives):
+                observations = Y[X_l == i]
+                if observations.numel() == 0:
+                    continue
+                self.alternative_observations[i] = torch.cat(
+                    [self.alternative_observations[i], observations]
+                )
+                self.means[i] = self.alternative_observations[i].mean()
+                self.stds[i] = self.alternative_observations[i].std()
+                self.vars[i] = self.stds[i].pow(2)
