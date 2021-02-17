@@ -1,0 +1,8 @@
+{
+    "num_alternatives": 20,
+    "rho": 0.2,
+    "num_full_train": 5,
+    "iterations": 400,
+    "fit_frequency": 5,
+    "fit_tries": 1
+}

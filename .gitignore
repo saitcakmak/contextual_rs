@@ -87,3 +87,6 @@ ENV/
 
 # other
 offline_test/
+
+# experiment output
+*.pt
