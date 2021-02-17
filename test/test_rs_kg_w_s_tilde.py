@@ -14,12 +14,12 @@ from test.utils import BotorchTestCase
 class TestRSKGwSTilde(BotorchTestCase):
     def test_rs_kg_w_s_tilde(self):
         num_alternatives = 3
-        train_X = torch.tensor([
-            0., 0., 0., 0., 1., 1., 1., 1., 2., 2., 2., 2.
-        ])
-        train_Y = torch.tensor([
-            0.0, 0.1, 0.05, 0.025, 0.5, 0.55, 0.6, 0.52, 2.5, 2.7, 3.0, 3.5
-        ])
+        train_X = torch.tensor(
+            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0]
+        )
+        train_Y = torch.tensor(
+            [0.0, 0.1, 0.05, 0.025, 0.5, 0.55, 0.6, 0.52, 2.5, 2.7, 3.0, 3.5]
+        )
 
         # LCEGP test
         model = LCEGP(train_X.view(-1, 1), train_Y.view(-1, 1), [0])

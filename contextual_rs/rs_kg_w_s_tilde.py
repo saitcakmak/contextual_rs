@@ -116,9 +116,11 @@ def find_kg_maximizer_ukm(model: UnknownCorrelationModel) -> int:
     df = model.predictive_df()
     qk = (model.q + 1) / (model.q * df)
     if model.update_method == "KL":
-        S0 = math.sqrt(qk)/(model.q*(model.b + 1.0/K)/(model.b + 1.0/K - K + 1) + 1)
+        S0 = math.sqrt(qk) / (
+            model.q * (model.b + 1.0 / K) / (model.b + 1.0 / K - K + 1) + 1
+        )
     else:
-        S0 = 1.0/math.sqrt((model.q+1) * model.q * df)
+        S0 = 1.0 / math.sqrt((model.q + 1) * model.q * df)
     # algorithm loop
     v_star = -float("inf")
     x_star = None

@@ -276,9 +276,11 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         """
         if len(self.categorical_cols) != 1 or self.continuous_cols != list():
             raise NotImplementedError("This is defined only for the simple RS setting!")
-        all_alternatives = torch.tensor(
-            range(self.category_counts[0])
-        ).view(-1, 1).to(self.train_targets)
+        all_alternatives = (
+            torch.tensor(range(self.category_counts[0]))
+            .view(-1, 1)
+            .to(self.train_targets)
+        )
         full_mvn = self(all_alternatives)
         noise = self.likelihood.noise.squeeze()
         if X is None:

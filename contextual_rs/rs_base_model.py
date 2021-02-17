@@ -39,7 +39,9 @@ class RSBaseModel(Module):
         dtype = train_X.dtype
         self.alternatives = train_X.unique(sorted=True)
         self.num_alternatives = self.alternatives.shape[-1]
-        if torch.any(self.alternatives != torch.arange(len(self.alternatives))):
+        if torch.any(
+            self.alternatives != torch.arange(len(self.alternatives), device=device)
+        ):
             raise ValueError(
                 "Expected the training input to include all values from"
                 f"0, ..., n_alternatives - 1 at least once. Got {self.alternatives}."

@@ -21,13 +21,15 @@ class TestPCSNoContext(BotorchTestCase):
         base_samples = None
         num_arms = 3
         num_train = 5
-        train_X = torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        train_X = (
+            torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        )
         # construct and train the model
         model = LCEGP(
             train_X,
             torch.randn(num_train * num_arms, 1),
             categorical_cols=[0],
-            embs_dim_list=[2]
+            embs_dim_list=[2],
         )
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_model(mll)
@@ -84,7 +86,9 @@ class TestPCSNoContext(BotorchTestCase):
         num_arms = 10
         num_train = 5
         num_samples = 100
-        train_X = torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        train_X = (
+            torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        )
 
         # construct and train the model
         model = LCEGP(
@@ -113,7 +117,9 @@ class TestPCSNoContext(BotorchTestCase):
 
         # it should converge to 1 as we add more and more training samples
         num_train = 50
-        train_X = torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        train_X = (
+            torch.arange(num_arms, dtype=torch.float).repeat(num_train).view(-1, 1)
+        )
 
         # construct and train the model
         model = LCEGP(

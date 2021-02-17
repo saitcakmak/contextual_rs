@@ -200,7 +200,9 @@ class TestLCEGP(BotorchTestCase):
             dim = 6
             num_test = 4
             test_x = torch.rand(num_test, dim, **ckwargs)
-            test_x[:, -3:] = torch.tensor([0.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
+            test_x[:, -3:] = torch.tensor([0.0, 1.0, 2.0], **ckwargs).repeat(
+                num_test, 1
+            )
             post = model.posterior(test_x)
             self.assertEqual(post.mean.shape, torch.Size([num_test, 1]))
             self.assertEqual(post.variance.shape, torch.Size([num_test, 1]))
@@ -209,7 +211,9 @@ class TestLCEGP(BotorchTestCase):
             test_x = test_x.expand(*batch_shape, -1, -1)
             post = model.posterior(test_x)
             self.assertEqual(post.mean.shape, torch.Size([*batch_shape, num_test, 1]))
-            self.assertEqual(post.variance.shape, torch.Size([*batch_shape, num_test, 1]))
+            self.assertEqual(
+                post.variance.shape, torch.Size([*batch_shape, num_test, 1])
+            )
 
     def test_fantasize(self):
         for dtype, device in product(self.dtype_list, self.device_list):
@@ -225,7 +229,9 @@ class TestLCEGP(BotorchTestCase):
             self.assertEqual(fm.train_targets.shape, torch.Size([n_f, 14]))
             num_test = 4
             test_x = torch.rand(num_test, dim, **ckwargs)
-            test_x[..., -3:] = torch.tensor([2.0, 1.0, 2.0], **ckwargs).repeat(num_test, 1)
+            test_x[..., -3:] = torch.tensor([2.0, 1.0, 2.0], **ckwargs).repeat(
+                num_test, 1
+            )
             post = fm.posterior(test_x)
             self.assertEqual(post.mean.shape, torch.Size([n_f, num_test, 1]))
             self.assertEqual(post.variance.shape, torch.Size([n_f, num_test, 1]))
@@ -382,7 +388,7 @@ class TestLCEGP(BotorchTestCase):
 
             # error check when X is non-scalar or non-integer
             with self.assertRaises(ValueError):
-                model.get_s_tilde(torch.tensor([1., 2.], **ckwargs))
+                model.get_s_tilde(torch.tensor([1.0, 2.0], **ckwargs))
             with self.assertRaises(ValueError):
                 model.get_s_tilde(torch.tensor([0.5], **ckwargs))
 
