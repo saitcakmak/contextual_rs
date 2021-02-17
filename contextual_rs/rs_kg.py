@@ -10,8 +10,8 @@ from botorch.utils.transforms import t_batch_mode_transform
 from torch import Tensor
 from torch.distributions.studentT import StudentT
 
-from contextual_rs.lce_gp import LCEGP
-from contextual_rs.unknown_correlation_model import UnknownCorrelationModel
+from contextual_rs.models.lce_gp import LCEGP
+from contextual_rs.models.unknown_correlation_model import UnknownCorrelationModel
 
 
 class DiscreteKG(AcquisitionFunction):

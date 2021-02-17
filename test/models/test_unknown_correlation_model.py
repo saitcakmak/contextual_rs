@@ -2,7 +2,7 @@ from itertools import product
 
 import torch
 from torch.distributions import MultivariateNormal
-from contextual_rs.unknown_correlation_model import UnknownCorrelationModel
+from contextual_rs.models.unknown_correlation_model import UnknownCorrelationModel
 from test.utils import BotorchTestCase
 
 

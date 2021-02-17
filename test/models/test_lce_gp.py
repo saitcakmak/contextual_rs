@@ -8,7 +8,7 @@ from botorch.sampling import IIDNormalSampler, SobolQMCNormalSampler
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from torch.distributions import MultivariateNormal
 
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.lce_gp import LCEGP
 from test.utils import BotorchTestCase
 
 

@@ -1,5 +1,5 @@
 import torch
-from contextual_rs.independent_gp import IndependentGP
+from contextual_rs.models.independent_gp import IndependentGP
 from test.utils import BotorchTestCase
 
 

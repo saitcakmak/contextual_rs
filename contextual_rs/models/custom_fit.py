@@ -7,7 +7,7 @@ import torch
 from botorch.fit import _set_transformed_inputs
 from botorch.optim.fit import fit_gpytorch_scipy
 from botorch.optim.utils import sample_all_priors
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.lce_gp import LCEGP
 from gpytorch.mlls import MarginalLogLikelihood
 
 

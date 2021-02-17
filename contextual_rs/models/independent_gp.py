@@ -1,11 +1,10 @@
 from __future__ import annotations
 import torch
-from botorch.sampling import MCSampler
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.lazy import DiagLazyTensor
 from torch import Tensor
 
-from contextual_rs.rs_base_model import RSBaseModel
+from contextual_rs.models.rs_base_model import RSBaseModel
 
 
 class IndependentGP(RSBaseModel):

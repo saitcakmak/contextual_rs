@@ -5,7 +5,7 @@ import torch
 from scipy.stats import multivariate_t, t
 from torch import Tensor
 
-from contextual_rs.rs_base_model import RSBaseModel
+from contextual_rs.models.rs_base_model import RSBaseModel
 
 
 class UnknownCorrelationModel(RSBaseModel):

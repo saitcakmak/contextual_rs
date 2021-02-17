@@ -9,7 +9,7 @@ from contextual_rs.generalized_pcs import (
     estimate_lookahead_generalized_pcs,
     estimate_current_generalized_pcs,
 )
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.lce_gp import LCEGP
 from test.utils import BotorchTestCase
 
 

@@ -4,12 +4,12 @@ from botorch import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from torch import Tensor
 
-from contextual_rs.custom_fit import custom_fit_gpytorch_model
+from contextual_rs.models.custom_fit import custom_fit_gpytorch_model
 from contextual_rs.pcs_no_context import (
     estimate_lookahead_pcs_no_context,
     estimate_current_pcs_no_context,
 )
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.lce_gp import LCEGP
 from test.utils import BotorchTestCase
 
 

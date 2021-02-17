@@ -5,8 +5,8 @@ import torch
 from botorch.optim.fit import fit_gpytorch_scipy
 from gpytorch import ExactMarginalLogLikelihood
 
-from contextual_rs.lce_gp import LCEGP
-from contextual_rs.custom_fit import custom_fit_gpytorch_model
+from contextual_rs.models.lce_gp import LCEGP
+from contextual_rs.models.custom_fit import custom_fit_gpytorch_model
 from test.utils import BotorchTestCase
 
 

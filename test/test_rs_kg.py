@@ -4,8 +4,8 @@ from botorch.models.transforms import Standardize
 from botorch.sampling import SobolQMCNormalSampler
 from gpytorch import ExactMarginalLogLikelihood
 
-from contextual_rs.unknown_correlation_model import UnknownCorrelationModel
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.unknown_correlation_model import UnknownCorrelationModel
+from contextual_rs.models.lce_gp import LCEGP
 from contextual_rs.rs_kg import DiscreteKG, UnknownCorrelationKG
 from test.utils import BotorchTestCase
 

@@ -5,9 +5,9 @@ import torch
 from botorch import fit_gpytorch_model
 from gpytorch import ExactMarginalLogLikelihood
 
-from contextual_rs.lce_gp import LCEGP
+from contextual_rs.models.lce_gp import LCEGP
 from contextual_rs.rs_kg_w_s_tilde import find_kg_maximizer
-from contextual_rs.unknown_correlation_model import UnknownCorrelationModel
+from contextual_rs.models.unknown_correlation_model import UnknownCorrelationModel
 from test.utils import BotorchTestCase
 
 
@@ -26,6 +26,7 @@ class TestRSKGwSTilde(BotorchTestCase):
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_model(mll)
 
+        # TODO: does this not hold because of homoscedastic noise?
         maximizer = find_kg_maximizer(model)
         self.assertEqual(maximizer, 2)
 
