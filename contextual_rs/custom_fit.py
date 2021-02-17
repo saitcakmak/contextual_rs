@@ -1,3 +1,4 @@
+import math
 from collections import Callable
 from copy import deepcopy
 from typing import Any
@@ -8,15 +9,6 @@ from botorch.optim.fit import fit_gpytorch_scipy
 from botorch.optim.utils import sample_all_priors
 from contextual_rs.lce_gp import LCEGP
 from gpytorch.mlls import MarginalLogLikelihood
-from torch import Tensor
-
-
-def _eval_mll(mll: MarginalLogLikelihood) -> Tensor:
-    r"""
-    Evaluates the mll on training inputs. The larger the better.
-    """
-    train_inputs, train_targets = mll.model.train_inputs, mll.model.train_targets
-    return mll(mll.model(*train_inputs), train_targets).sum()
 
 
 def custom_fit_gpytorch_model(
@@ -36,7 +28,6 @@ def custom_fit_gpytorch_model(
     Returns:
         The optimized mll.
     """
-    # TODO: we could add raw samples here as well
     assert isinstance(mll.model, LCEGP), "Only supports LCEGP!"
     num_retries = kwargs.pop("num_retries", 1)
     mll.train()
@@ -44,25 +35,46 @@ def custom_fit_gpytorch_model(
     retry = 0
     state_dict_list = list()
     mll_values = torch.zeros(num_retries)
+    max_error_tries = kwargs.pop("max_error_tries", 10)
+    randn_factor = kwargs.pop("randn_factor", 0.1)
+    error_count = 0
     while retry < num_retries:
         if retry > 0:  # use normal initial conditions on first try
             mll.model.load_state_dict(original_state_dict)
-            # randomize the embedding as well
-            for emb_layer in mll.model.emb_layers:
-                new_weight = torch.randn_like(emb_layer.weight)
-                emb_layer.weight = torch.nn.Parameter(new_weight, requires_grad=True)
+            # randomize the embedding as well, reinitializing here.
+            # two alternatives for initialization, specified by passing randn_factor
+            for i, emb_layer in enumerate(mll.model.emb_layers):
+                if randn_factor == 0:
+                    new_emb = torch.nn.Embedding(
+                        emb_layer.num_embeddings,
+                        emb_layer.embedding_dim,
+                        max_norm=emb_layer.max_norm,
+                    ).to(emb_layer.weight)
+                    mll.model.emb_layers[i] = new_emb
+                else:
+                    new_weight = torch.randn_like(emb_layer.weight) * randn_factor
+                    emb_layer.weight = torch.nn.Parameter(
+                        new_weight, requires_grad=True
+                    )
             sample_all_priors(mll.model)
-        mll, _ = optimizer(mll, track_iterations=False, **kwargs)
-        mll.eval()
+        mll, info_dict = optimizer(mll, track_iterations=False, **kwargs)
+        opt_val = info_dict["fopt"]
+        if math.isnan(opt_val):
+            if error_count < max_error_tries:
+                error_count += 1
+                continue
+            else:
+                state_dict_list.append(None)
+                mll_values[retry] = float("-inf")
+
         # record the fitted model and the corresponding mll value
         state_dict_list.append(deepcopy(mll.model.state_dict()))
-        mll_values[retry] = _eval_mll(mll)
+        mll_values[retry] = -opt_val  # negate to get mll value
         retry += 1
 
     # pick the best among all trained models
     best_idx = mll_values.argmax()
     best_params = state_dict_list[best_idx]
-    mll.train()
     mll.model.load_state_dict(best_params)
     _set_transformed_inputs(mll=mll)
     return mll.eval()
