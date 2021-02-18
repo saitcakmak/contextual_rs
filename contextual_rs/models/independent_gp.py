@@ -72,6 +72,8 @@ class IndependentGP(RSBaseModel):
             raise ValueError(
                 "Inputs must be integers from range 0, ..., n_alternatives - 1!"
             )
+        self.train_X = torch.cat([self.train_X, X], dim=0)
+        self.train_Y = torch.cat([self.train_Y, Y], dim=0)
         # pick the loop based on the size of the input
         if X_l.shape[0] < self.num_alternatives:
             # loop over the inputs, add them one by one

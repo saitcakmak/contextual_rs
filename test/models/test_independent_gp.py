@@ -155,6 +155,11 @@ class TestIndependentGP(BotorchTestCase):
                 torch.equal(model.stds, torch.cat([y.std().view(-1) for y in y_list]))
             )
 
+            # check that train_X and train_Y were properly updated
+            # both should have 47 entries
+            self.assertEqual(model.train_X.shape, torch.Size([47]))
+            self.assertEqual(model.train_Y.shape, torch.Size([47]))
+
             # test error checks
             with self.assertRaisesRegex(AssertionError, "X and Y"):
                 model.add_samples(torch.rand(2, **ckwargs), torch.rand(1, **ckwargs))
