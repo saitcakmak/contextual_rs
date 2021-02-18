@@ -82,7 +82,7 @@ def find_kg_maximizer_lcegp(model: LCEGP):
         b, index = torch.sort(b)
         a = a[index]
         # handle ties in b, sort a in increasing order if ties found
-        if torch.any(b[1:] == b[:-1]):
+        if torch.any(b[1:] == b[:-1]):  # pragma: no cover
             for j in range(M):
                 a[b == b[j]], _ = torch.sort(a[b == b[j]])
         # remove the redundant entries as described in the algorithm
@@ -132,7 +132,7 @@ def find_kg_maximizer_ukm(model: UnknownCorrelationModel) -> int:
         b, index = torch.sort(b)
         a = a[index]
         # handle ties in b, sort a in increasing order if ties found
-        if torch.any(b[1:] == b[:-1]):
+        if torch.any(b[1:] == b[:-1]):  # pragma: no cover
             for j in range(K):
                 a[b == b[j]], _ = torch.sort(a[b == b[j]])
         # remove the redundant entries as described in the algorithm
