@@ -55,6 +55,7 @@ class TestContextualIndependentModel(BotorchTestCase):
             )
 
             self.assertTrue(torch.equal(model.context_map, context_map))
+            self.assertTrue(torch.all(model.num_observations == n_observation_per))
 
             # test posterior
             test_X = train_X.view(-1, n_observation_per, 2)[:, 0]
@@ -89,6 +90,7 @@ class TestContextualIndependentModel(BotorchTestCase):
                 model.train_Y.shape,
                 torch.Size([n_arms * n_contexts * n_observation_per * 2]),
             )
+            self.assertTrue(torch.all(model.num_observations == n_observation_per * 2))
 
             # add only a few samples
             X_ = torch.tensor([[0, 0], [1, 1], [1, 1]], **ckwargs)
@@ -100,6 +102,11 @@ class TestContextualIndependentModel(BotorchTestCase):
             expected_mean[1, 1] = new_Y_11.mean()
             expected_std[0, 0] = new_Y_00.std()
             expected_std[1, 1] = new_Y_11.std()
+            expected_observations = (
+                torch.ones_like(expected_mean) * n_observation_per * 2
+            )
+            expected_observations[0, 0] += 1
+            expected_observations[1, 1] += 2
             # check that the parameters are updated correctly
             self.assertTrue(torch.allclose(model.means, expected_mean))
             self.assertTrue(torch.allclose(model.stds, expected_std))
@@ -112,6 +119,7 @@ class TestContextualIndependentModel(BotorchTestCase):
                 model.train_Y.shape,
                 torch.Size([n_arms * n_contexts * n_observation_per * 2 + 3]),
             )
+            self.assertTrue(torch.equal(model.num_observations, expected_observations))
 
             # add a lot of samples at a single point
             X_ = torch.tensor([[0, 0]], **ckwargs).repeat(20, 1)
@@ -120,6 +128,7 @@ class TestContextualIndependentModel(BotorchTestCase):
             new_Y_00 = torch.cat([new_Y_00, Y_])
             expected_mean[0, 0] = new_Y_00.mean()
             expected_std[0, 0] = new_Y_00.std()
+            expected_observations[0, 0] += 20
             # check that the parameters are updated correctly
             self.assertTrue(torch.allclose(model.means, expected_mean))
             self.assertTrue(torch.allclose(model.stds, expected_std))
@@ -132,3 +141,4 @@ class TestContextualIndependentModel(BotorchTestCase):
                 model.train_Y.shape,
                 torch.Size([n_arms * n_contexts * n_observation_per * 2 + 23]),
             )
+            self.assertTrue(torch.equal(model.num_observations, expected_observations))

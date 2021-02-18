@@ -63,6 +63,7 @@ class ContextualIndependentModel(Module):
         self.num_contexts = self.contexts.shape[0]
 
         self.observations = list()
+        self.num_observations = torch.zeros(self.num_arms, self.num_contexts, **ckwargs)
         self.means = torch.zeros(self.num_arms, self.num_contexts, **ckwargs)
         self.stds = torch.zeros(self.num_arms, self.num_contexts, **ckwargs)
         # collect the observations and calculate sample statistics.
@@ -73,6 +74,7 @@ class ContextualIndependentModel(Module):
                     (train_X == torch.tensor([arm, context], **ckwargs)).all(dim=-1)
                 ]
                 self.observations[arm].append(observations)
+                self.num_observations[arm, context] = observations.shape[0]
                 self.means[arm, context] = observations.mean()
                 std = observations.std()
                 if std.isnan():  # pragma: no cover
@@ -131,6 +133,7 @@ class ContextualIndependentModel(Module):
                 self.observations[x[0]][x[1]] = torch.cat(
                     [self.observations[x[0]][x[1]], y.view(-1)]
                 )
+                self.num_observations[x[0], x[1]] += 1
                 self.means[x[0], x[1]] = self.observations[x[0]][x[1]].mean()
                 self.stds[x[0], x[1]] = self.observations[x[0]][x[1]].std()
                 self.vars[x[0], x[1]] = self.stds[x[0], x[1]].pow(2)
@@ -146,6 +149,7 @@ class ContextualIndependentModel(Module):
                     self.observations[arm][context] = torch.cat(
                         [self.observations[arm][context], observations]
                     )
+                    self.num_observations[arm, context] += observations.shape[0]
                     self.means[arm, context] = self.observations[arm][context].mean()
                     self.stds[arm, context] = self.observations[arm][context].std()
                     self.vars[arm, context] = self.stds[arm, context].pow(2)
