@@ -59,12 +59,13 @@ class TestCustomFit(BotorchTestCase):
                 fit_gpytorch_scipy, return_value=(mll, {"fopt": float("nan")})
             )
             num_tries = 3
-            # will raise Attribute error since it gets NaN all the time.
-            with self.assertRaises(AttributeError):
-                fitted_mll = custom_fit_gpytorch_model(
-                    mll,
-                    optimizer=mock_optimizer,
-                    num_retries=num_tries,
-                    max_error_tries=5,
-                )
+            # It will return the original mll since it gets NaN all the time
+            fitted_mll = custom_fit_gpytorch_model(
+                mll,
+                optimizer=mock_optimizer,
+                num_retries=num_tries,
+                max_error_tries=5,
+            )
+            for p1, p2 in zip(fitted_mll.parameters(), mll.parameters()):
+                self.assertTrue(torch.equal(p1, p2))
             self.assertEqual(mock_optimizer.call_count, num_tries + 5)

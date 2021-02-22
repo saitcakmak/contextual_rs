@@ -64,8 +64,10 @@ def custom_fit_gpytorch_model(
                 error_count += 1
                 continue
             else:
-                state_dict_list.append(None)
+                state_dict_list.append(original_state_dict)
                 mll_values[retry] = float("-inf")
+                retry += 1
+                continue
 
         # record the fitted model and the corresponding mll value
         state_dict_list.append(deepcopy(mll.model.state_dict()))
