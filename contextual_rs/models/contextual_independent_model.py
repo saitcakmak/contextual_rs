@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 import torch
+from botorch.posteriors import GPyTorchPosterior
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.lazy import DiagLazyTensor
 from torch import Tensor
@@ -85,7 +86,7 @@ class ContextualIndependentModel(Module):
                 self.stds[arm, context] = std
         self.vars = self.stds.pow(2)
 
-    def posterior(self, X: Tensor) -> MultivariateNormal:
+    def posterior(self, X: Tensor) -> GPyTorchPosterior:
         r"""
         Returns a MultivariateNormal object representing the posterior distribution.
 
@@ -104,7 +105,7 @@ class ContextualIndependentModel(Module):
             )
         mean = self.means[(X_l[..., 0], X_l[..., 1])]
         covar = DiagLazyTensor(self.vars[(X_l[..., 0], X_l[..., 1])])
-        return MultivariateNormal(mean, covar)
+        return GPyTorchPosterior(MultivariateNormal(mean, covar))
 
     def add_samples(self, X: Tensor, Y: Tensor) -> None:
         r"""
