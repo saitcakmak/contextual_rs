@@ -24,7 +24,7 @@ class ContextualIndependentModel(Module):
         self,
         train_X: Tensor,
         train_Y: Tensor,
-        context_map: Optional[Tensor],
+        context_map: Optional[Tensor] = None,
     ) -> None:
         r"""
         A model with independent outputs, defined over a finite collection
