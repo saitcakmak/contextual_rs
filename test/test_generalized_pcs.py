@@ -126,6 +126,23 @@ class TestGeneralizedPCS(BotorchTestCase):
         # check that the values are probabilities, i.e., between 0 and 1
         self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
 
+        # check that the certainty equivalent approximation works fine
+        pcs = estimate_lookahead_generalized_pcs(
+            candidate=candidate,
+            model=model,
+            model_sampler=None,
+            arm_set=arm_set,
+            context_set=context_set,
+            num_samples=num_samples,
+            base_samples=base_samples,
+            func_I=func_I,
+            rho=rho,
+        )
+        # check output shape
+        self.assertEqual(pcs.shape, torch.Size([num_candidates]))
+        # check that the values are probabilities, i.e., between 0 and 1
+        self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
+
     def test_estimate_current_generalized_pcs(self):
         def sine_test(X: Tensor) -> Tensor:
             return torch.sin(X * 10.0).sum(dim=-1, keepdim=True)

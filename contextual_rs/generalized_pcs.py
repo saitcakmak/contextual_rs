@@ -10,7 +10,7 @@ from torch import Tensor
 def estimate_lookahead_generalized_pcs(
     candidate: Tensor,
     model: Model,
-    model_sampler: MCSampler,
+    model_sampler: Optional[MCSampler],
     arm_set: Tensor,
     context_set: Tensor,
     # If not using SAA, number of contexts may need to be passed instead
@@ -28,6 +28,7 @@ def estimate_lookahead_generalized_pcs(
             point, used for generating the fantasy models.
         model: The current GP model, used for generating the fantasy models.
         model_sampler: An MCSampler object, used for generating the fantasy models.
+            If None, the certainty equivalent approximation is used.
         arm_set: An `n_x x d_x`-dim tensor of set of arms under consideration.
         context_set: An `n_c x d_c`-dim tensor of the set of contexts to use. Samples
             will be generated using the `(n_x * n_c) x (d_x + d_c)`-dim tensor resulting
@@ -62,10 +63,15 @@ def estimate_lookahead_generalized_pcs(
     num_contexts = context_set.shape[0]
 
     # generate the fantasy model
-    fantasy_model = model.fantasize(
-        candidate,
-        model_sampler,
-    )
+    if model_sampler is not None:
+        fantasy_model = model.fantasize(
+            candidate,
+            model_sampler,
+        )
+    else:
+        # Unsqueeze ensures that we have a num_fantasies dimension of size 1
+        Y = model.posterior(candidate).mean.unsqueeze(0)
+        fantasy_model = model.condition_on_observations(candidate, Y)
 
     # generate the tensor of arm-context pairs
     arm_context_pairs = torch.cat(
