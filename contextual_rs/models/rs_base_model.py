@@ -56,6 +56,7 @@ class RSBaseModel(Module):
         self.alternative_observations = list()
         self.means = torch.zeros(self.num_alternatives, device=device, dtype=dtype)
         self.stds = torch.zeros_like(self.means)
+        self.num_observations = torch.zeros_like(self.means)
         for i in range(self.num_alternatives):
             observations = train_Y[train_X == i]
             self.alternative_observations.append(observations)
@@ -67,3 +68,4 @@ class RSBaseModel(Module):
                     f"Got only 1 observation for alternative {i}."
                 )
             self.stds[i] = std
+            self.num_observations[i] = observations.shape[0]

@@ -104,7 +104,9 @@ class ContextualIndependentModel(Module):
                 "and 0, ..., n_contexts - 1!"
             )
         mean = self.means[(X_l[..., 0], X_l[..., 1])]
-        covar = DiagLazyTensor(self.vars[(X_l[..., 0], X_l[..., 1])])
+        vars = self.vars[(X_l[..., 0], X_l[..., 1])]
+        num_observations = self.num_observations[(X_l[..., 0], X_l[..., 1])]
+        covar = DiagLazyTensor(vars / num_observations)
         return GPyTorchPosterior(MultivariateNormal(mean, covar))
 
     def add_samples(self, X: Tensor, Y: Tensor) -> None:

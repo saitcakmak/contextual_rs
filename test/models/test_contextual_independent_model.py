@@ -61,12 +61,18 @@ class TestContextualIndependentModel(BotorchTestCase):
             test_X = train_X.view(-1, n_observation_per, 2)[:, 0]
             post = model.posterior(test_X)
             self.assertTrue(torch.allclose(model.means.view(-1, 1), post.mean))
-            self.assertTrue(torch.allclose(model.vars.view(-1, 1), post.variance))
+            self.assertTrue(
+                torch.allclose(
+                    model.vars.view(-1, 1) / n_observation_per, post.variance
+                )
+            )
             # with a single input
             test_X = torch.tensor([0, 0], **ckwargs)
             post = model.posterior(test_X)
             self.assertTrue(torch.allclose(model.means[0, 0], post.mean))
-            self.assertTrue(torch.allclose(model.vars[0, 0], post.variance))
+            self.assertTrue(
+                torch.allclose(model.vars[0, 0] / n_observation_per, post.variance)
+            )
 
             # test add samples
             X = train_X

@@ -52,7 +52,9 @@ class IndependentGP(RSBaseModel):
                 "Inputs must be integers from range 0, ..., n_alternatives - 1!"
             )
         mean = self.means[X_l]
-        covar = DiagLazyTensor(self.vars[X_l])
+        vars = self.vars[X_l]
+        num_observations = self.num_observations[X_l]
+        covar = DiagLazyTensor(vars / num_observations)
         return MultivariateNormal(mean, covar)
 
     def add_samples(self, X: Tensor, Y: Tensor) -> None:

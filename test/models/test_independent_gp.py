@@ -61,14 +61,19 @@ class TestIndependentGP(BotorchTestCase):
             test_X = torch.tensor([3], **ckwargs)
             post = model.posterior(test_X)
             self.assertEqual(post.mean, model.means[3])
-            self.assertEqual(post.covariance_matrix, model.vars[3])
+            self.assertEqual(
+                post.covariance_matrix, model.vars[3] / model.num_observations[3]
+            )
 
             # multiple inputs
             test_X = torch.tensor([2, 3], **ckwargs)
             post = model.posterior(test_X)
             self.assertTrue(torch.equal(post.mean, model.means[[2, 3]]))
             self.assertTrue(
-                torch.equal(post.covariance_matrix.diag(), model.vars[[2, 3]])
+                torch.equal(
+                    post.covariance_matrix.diag(),
+                    model.vars[[2, 3]] / model.num_observations[[2, 3]],
+                )
             )
 
             # batch inputs
@@ -77,11 +82,17 @@ class TestIndependentGP(BotorchTestCase):
             post = model.posterior(test_X)
             self.assertTrue(torch.equal(post.mean[0], model.means[idcs[0]]))
             self.assertTrue(
-                torch.equal(post.covariance_matrix[0].diag(), model.vars[idcs[0]])
+                torch.equal(
+                    post.covariance_matrix[0].diag(),
+                    model.vars[idcs[0]] / model.num_observations[idcs[0]],
+                )
             )
             self.assertTrue(torch.equal(post.mean[1], model.means[idcs[1]]))
             self.assertTrue(
-                torch.equal(post.covariance_matrix[1].diag(), model.vars[idcs[1]])
+                torch.equal(
+                    post.covariance_matrix[1].diag(),
+                    model.vars[idcs[1]] / model.num_observations[idcs[1]],
+                )
             )
 
     def test_add_new_observations(self):
