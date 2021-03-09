@@ -1,0 +1,9 @@
+{
+    "iterations": 300,
+    "fit_frequency": 25,
+    "fit_tries": 10,
+    "standardize": 1,
+    "num_arms": 4,
+    "num_contexts": 4,
+    "obs_noise": 5.0
+}

@@ -1,0 +1,9 @@
+{
+    "iterations": 100,
+    "fit_frequency": 25,
+    "fit_tries": 10,
+    "num_arms": 6,
+    "num_contexts": 20,
+    "batch_size": 5,
+    "num_fantasies": 0
+}

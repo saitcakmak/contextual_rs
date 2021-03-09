@@ -1,0 +1,8 @@
+{
+    "iterations": 5000,
+    "fit_frequency": 10,
+    "num_arms": 6,
+    "num_contexts": 6,
+    "obs_noise": 5.0,
+    "skip_lcegp": 1
+}

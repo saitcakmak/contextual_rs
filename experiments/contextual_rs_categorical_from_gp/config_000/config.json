@@ -1,0 +1,8 @@
+{
+    "iterations": 100,
+    "fit_frequency": 10,
+    "fit_tries": 5,
+    "num_arms": 4,
+    "num_contexts": 4,
+    "randomize_ties": 1
+}

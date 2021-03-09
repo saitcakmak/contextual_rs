@@ -1,0 +1,7 @@
+{
+    "iterations": 200,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_contexts": 4,
+    "obs_noise": 2.0
+}

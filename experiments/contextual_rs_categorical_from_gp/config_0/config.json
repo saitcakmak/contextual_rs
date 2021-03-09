@@ -1,0 +1,6 @@
+{
+    "iterations": 100,
+    "fit_frequency": 10,
+    "num_arms": 4,
+    "num_contexts": 4
+}

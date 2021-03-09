@@ -1,0 +1,5 @@
+{
+    "iterations": 100,
+    "num_arms": 4,
+    "num_contexts": 4
+}
