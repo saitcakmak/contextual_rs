@@ -275,7 +275,10 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
             corresponding to s_tilde for i-th alternative.
         """
         if len(self.categorical_cols) != 1 or self.continuous_cols != list():
-            raise NotImplementedError("This is defined only for the simple RS setting!")
+            raise NotImplementedError(
+                "This is defined only for the simple RS setting!"
+                "Use `get_s_tilde_general` instead!"
+            )
         all_alternatives = (
             torch.tensor(range(self.category_counts[0]))
             .view(-1, 1)
@@ -285,9 +288,11 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         noise = self.likelihood.noise.squeeze()
         if X is None:
             covar = full_mvn.covariance_matrix
-            noisy_covar = covar + torch.diag(noise.expand(covar.shape[-1]))
-            noisy_root = torch.cholesky(noisy_covar, upper=True)
-            return covar.matmul(torch.inverse(noisy_root))
+            diag_covar = covar.diag()
+            noisy_diag = diag_covar + noise
+            noisy_diag_root = noisy_diag.sqrt()
+            expanded = noisy_diag_root.view(-1, 1).expand_as(covar)
+            return covar / expanded
         else:
             X_l = X.long()
             if X.numel() != 1 or X != X_l:

@@ -401,7 +401,7 @@ class TestLCEGP(BotorchTestCase):
 
             # check that getting the all alternatives at once agrees
             # with getting them one by one
-            self.assertTrue(torch.allclose(full_s_tilde, all_s_tilde, atol=1e-2))
+            self.assertTrue(torch.allclose(full_s_tilde, all_s_tilde, atol=1e-5))
 
             # check that it agrees with `fantasize`
             fm = model.fantasize(
