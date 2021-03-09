@@ -300,3 +300,30 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
             K_x_X = full_mvn.covariance_matrix[:, X_l].view(-1)
             second_term = (full_mvn.covariance_matrix[X_l, X_l] + noise).sqrt()
             return K_x_X / second_term
+
+    def get_s_tilde_general(self, X: Tensor, x: Tensor) -> Tensor:
+        r"""
+        This returns the s_tilde in the general setting where we have
+        more than a single categorical input dimension.
+
+        .. math::
+            \tilde{\sigma}(x, X) = K(x, X) \Chol{ K(X, X) + \diag(\sigma^2(X)) }^{-1}
+
+        Args:
+            X: `batch_shape x q x d`-dim tensor of candidates.
+            x: `n' x d`-dim tensor of points to calculate s_tilde for.
+
+        Returns:
+            `batch_shape x n' x q`-dim tensor of s_tilde values.
+        """
+        q = X.shape[-2]
+        x_cat = torch.cat([x.expand(X.shape[:-2] + x.shape), X], dim=-2)
+        full_mvn = self(x_cat)
+        full_covar = full_mvn.covariance_matrix
+        noise = self.likelihood.noise.squeeze()
+        K_x_X = full_covar[..., :-q, -q:]
+        K_X_X = full_covar[..., -q:, -q:]
+        chol = torch.cholesky(K_X_X + torch.diag(noise.expand(q)).expand_as(K_X_X))
+        return K_x_X.matmul(chol.inverse())
+
+

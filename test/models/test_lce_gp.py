@@ -414,3 +414,7 @@ class TestLCEGP(BotorchTestCase):
             self.assertTrue(
                 torch.allclose(empirical_s_tilde, all_s_tilde[0].abs(), atol=1e-3)
             )
+
+    def test_sigma_tilde_general(self):
+        # TODO: write test cases!!
+        raise NotImplementedError
