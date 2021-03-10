@@ -8,7 +8,10 @@ import torch
 from botorch.models import ModelListGP, SingleTaskGP
 
 from contextual_rs.models.lce_gp import LCEGP
-from contextual_rs.finite_ikg import finite_ikg_maximizer, finite_ikg_maximizer_modellist
+from contextual_rs.finite_ikg import (
+    finite_ikg_maximizer,
+    finite_ikg_maximizer_modellist,
+)
 from test.utils import BotorchTestCase
 
 
@@ -44,8 +47,7 @@ class TestFiniteIKG(BotorchTestCase):
             model = ModelListGP(
                 *[
                     SingleTaskGP(
-                        torch.rand(10, 2, **ckwargs),
-                        torch.randn(10, 1, **ckwargs)
+                        torch.rand(10, 2, **ckwargs), torch.randn(10, 1, **ckwargs)
                     )
                     for _ in range(num_arms)
                 ]

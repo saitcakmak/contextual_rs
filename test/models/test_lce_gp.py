@@ -284,7 +284,7 @@ class TestLCEGP(BotorchTestCase):
     def test_only_categorical_inputs(self):
         # testing the use case with purely categorical inputs
         for dim, dtype, device, use_matern, use_outputscale in product(
-                (1, 3), self.dtype_list, self.device_list, (False, True), (False, True)
+            (1, 3), self.dtype_list, self.device_list, (False, True), (False, True)
         ):
             ckwargs = {"dtype": dtype, "device": device}
             num_train = 20

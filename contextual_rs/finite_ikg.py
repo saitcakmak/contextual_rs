@@ -41,7 +41,9 @@ def _pearce_alg_1(a: Tensor, b: Tensor) -> Tensor:
             a[b == b[j]], _ = torch.sort(a[b == b[j]])
     # remove the redundant entries as described in the algorithm
     remaining = torch.ones(M, dtype=torch.bool)
-    remaining[torch.cat([b[1:] == b[:-1], torch.tensor([False]).to(a.device)], dim=0)] = 0
+    remaining[
+        torch.cat([b[1:] == b[:-1], torch.tensor([False]).to(a.device)], dim=0)
+    ] = 0
     a = a[remaining]
     b = b[remaining]
     # c and A has indices starting at 1!
@@ -95,7 +97,7 @@ def finite_ikg_maximizer(model: LCEGP, arm_set: Tensor, context_set: Tensor) -> 
     # this is (num_arms * num_contexts) x (num_arms * num_contexts) x 1
     full_sigma_tilde = model.get_s_tilde_general(
         X=arm_context_pairs.view(-1, 1, dim),
-        x=arm_context_pairs.view(num_arms * num_contexts, -1)
+        x=arm_context_pairs.view(num_arms * num_contexts, -1),
     )
 
     max_ikg_val = torch.tensor(float("-inf")).to(arm_set)
@@ -189,4 +191,3 @@ def finite_ikg_maximizer_modellist(
             max_idx = idx
 
     return max_idx // num_contexts, max_idx % num_contexts
-

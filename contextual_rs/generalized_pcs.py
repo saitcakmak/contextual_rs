@@ -124,9 +124,10 @@ def estimate_lookahead_generalized_pcs(
         # this posterior is num_context x fm.batch_shape over num_arms alternatives
         # fm.batch_shape = num_fantasies x num_candidates
         posterior = fantasy_model.posterior(
-            arm_context_pairs.reshape(num_arms, num_contexts, -1).transpose(0, 1).view(
-                num_contexts, 1, 1, num_arms, -1
-            ).repeat(1, *fantasy_model.batch_shape, 1, 1)
+            arm_context_pairs.reshape(num_arms, num_contexts, -1)
+            .transpose(0, 1)
+            .view(num_contexts, 1, 1, num_arms, -1)
+            .repeat(1, *fantasy_model.batch_shape, 1, 1)
         )
         # num_contexts x fm.batch_shape x num_arms
         means = posterior.mean.squeeze(-1)
@@ -137,31 +138,26 @@ def estimate_lookahead_generalized_pcs(
         deltas = means[..., :1].expand(*means.shape[:-1], num_arms - 1) - means[..., 1:]
         # we want to apply the same sort to covars over both arm dimensions
         # this does the rows, so first arm dim
-        covars = covars.gather(
-            dim=-2,
-            index=indices.unsqueeze(-1).expand_as(covars)
-        )
+        covars = covars.gather(dim=-2, index=indices.unsqueeze(-1).expand_as(covars))
         # this does the columns, second arm dim
-        covars = covars.gather(
-            dim=-1,
-            index=indices.unsqueeze(-2).expand_as(covars)
-        )
+        covars = covars.gather(dim=-1, index=indices.unsqueeze(-2).expand_as(covars))
         # get the first row and expand it to appropriate shape
         c_first = covars[..., :1, :]
         c_first = torch.cat(
             [
                 c_first[..., :1].expand(*c_first.shape[:-1], num_arms - 1),
-                c_first[..., 1:]
-            ], dim=-1
+                c_first[..., 1:],
+            ],
+            dim=-1,
         )
         # writing dimensions explicitly as an implicit shape check
         S_e_upper = c_first.expand(*c_first.shape[:-2], num_arms - 1, 2 * num_arms - 2)
-        S_e_low_left = S_e_upper[..., num_arms - 1:].transpose(-1, -2)
+        S_e_low_left = S_e_upper[..., num_arms - 1 :].transpose(-1, -2)
         S_e_lower = torch.cat([S_e_low_left, covars[..., 1:, 1:]], dim=-1)
         # A_e S_e product, equivalent to upper - lower
         A_S = S_e_upper - S_e_lower
         # The second matrix product, first half - second half (over last dim)
-        S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1:]
+        S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1 :]
         # We can use this with deltas to get the distance to closes axis
         # min_dist is now simply a num_context x fm.batch_shape tensor,
         # corresponding to pcs_c_est below.
@@ -293,31 +289,26 @@ def estimate_current_generalized_pcs(
         deltas = means[..., :1].expand(*means.shape[:-1], num_arms - 1) - means[..., 1:]
         # we want to apply the same sort to covars over both arm dimensions
         # this does the rows, so first arm dim
-        covars = covars.gather(
-            dim=-2,
-            index=indices.unsqueeze(-1).expand_as(covars)
-        )
+        covars = covars.gather(dim=-2, index=indices.unsqueeze(-1).expand_as(covars))
         # this does the columns, second arm dim
-        covars = covars.gather(
-            dim=-1,
-            index=indices.unsqueeze(-2).expand_as(covars)
-        )
+        covars = covars.gather(dim=-1, index=indices.unsqueeze(-2).expand_as(covars))
         # get the first row and expand it to appropriate shape
         c_first = covars[..., :1, :]
         c_first = torch.cat(
             [
                 c_first[..., :1].expand(*c_first.shape[:-1], num_arms - 1),
-                c_first[..., 1:]
-            ], dim=-1
+                c_first[..., 1:],
+            ],
+            dim=-1,
         )
         # writing dimensions explicitly as an implicit shape check
         S_e_upper = c_first.expand(*c_first.shape[:-2], num_arms - 1, 2 * num_arms - 2)
-        S_e_low_left = S_e_upper[..., num_arms - 1:].transpose(-1, -2)
+        S_e_low_left = S_e_upper[..., num_arms - 1 :].transpose(-1, -2)
         S_e_lower = torch.cat([S_e_low_left, covars[..., 1:, 1:]], dim=-1)
         # A_e S_e product, equivalent to upper - lower
         A_S = S_e_upper - S_e_lower
         # The second matrix product, first half - second half (over last dim)
-        S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1:]
+        S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1 :]
         # We can use this with deltas to get the distance to closes axis
         # min_dist is now simply a num_context tensor, corresponding to pcs_c_est below.
         min_dist = _min_mahalanobis(deltas, S_d)
@@ -341,7 +332,9 @@ def estimate_current_generalized_pcs(
             means = means.unsqueeze(-1)
         else:
             # separate the arm and context dimensions
-            y_samples = y_samples.reshape(*y_samples.shape[:-2], num_arms, num_contexts, 1)
+            y_samples = y_samples.reshape(
+                *y_samples.shape[:-2], num_arms, num_contexts, 1
+            )
             means = means.reshape(*means.shape[:-2], num_arms, num_contexts, 1)
 
         # order means across arms and apply the same ordering to y_samples

@@ -71,7 +71,10 @@ class TestGeneralizedPCS(BotorchTestCase):
             train_X[:3, 0] = torch.tensor([0.0, 1.0, 2.0])
             # construct and train the model
             model = LCEGP(
-                train_X, torch.randn(num_train, 1), categorical_cols=[0], embs_dim_list=[2]
+                train_X,
+                torch.randn(num_train, 1),
+                categorical_cols=[0],
+                embs_dim_list=[2],
             )
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)
@@ -155,6 +158,7 @@ class TestGeneralizedPCS(BotorchTestCase):
     def test_estimate_current_generalized_pcs(self):
         def sine_test(X: Tensor) -> Tensor:
             return torch.sin(X * 10.0).sum(dim=-1, keepdim=True)
+
         for use_apx in [False, True]:
             # running a simple test with LCEGP
             # test with LCEMGP

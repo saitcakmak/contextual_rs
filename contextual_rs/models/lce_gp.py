@@ -344,5 +344,3 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         K_X_X = full_covar[..., -q:, -q:]
         chol = torch.cholesky(K_X_X + torch.diag(noise.expand(q)).expand_as(K_X_X))
         return K_x_X.matmul(chol.inverse())
-
-
