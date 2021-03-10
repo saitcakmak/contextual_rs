@@ -36,6 +36,7 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         outcome_transform: Optional[OutcomeTransform] = None,
         input_transform: Optional[InputTransform] = None,
         use_matern: bool = False,
+        use_outputscale: bool = False,
     ) -> None:
         r"""
         LCEGP with MaternKernel over continuous inputs and RBFKernel over
@@ -69,6 +70,7 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
                 forward pass. Only applied to continuous columns of the input.
             use_matern: This was originally designed with RBF kernel over embedding.
                 This adds an option to use a Matern kernel instead. This also has
+            use_outputscale: If True, adds an output-scale parameter to embedding kernel.
         """
         self._validate_inputs(
             train_X=train_X,
@@ -169,6 +171,11 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
                 lengthscale_constraint=Interval(
                     0.0, 2.0, transform=None, initial_value=1.0
                 ),
+            )
+        if use_outputscale:
+            self.emb_covar_module = ScaleKernel(
+                self.emb_covar_module,
+                outputscale_prior=GammaPrior(2.0, 0.15),
             )
 
         self.categorical_cols = categorical_cols
