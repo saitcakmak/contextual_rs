@@ -188,5 +188,5 @@ def finite_ikg_maximizer_modellist(
             max_ikg_val = ikg_val
             max_idx = idx
 
-    return max_idx // num_arms, max_idx % num_arms
+    return max_idx // num_contexts, max_idx % num_contexts
 
