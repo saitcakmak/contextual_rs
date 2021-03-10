@@ -163,6 +163,18 @@ class TestLCEGP(BotorchTestCase):
             self.assertEqual(model.emb_covar_module.ard_num_dims, 6)
             self.assertEqual(model.categorical_cols, [2, 3, 4])
 
+            # test with Matern
+            model = LCEGP(
+                train_X=train_X,
+                train_Y=train_Y,
+                categorical_cols=[-3, -2, -1],
+                embs_dim_list=[3, 2, 1],
+                use_matern=True,
+            )
+            self.assertEqual(model.emb_dims, [(10, 3), (5, 2), (3, 1)])
+            self.assertEqual(model.emb_covar_module.ard_num_dims, 6)
+            self.assertEqual(model.categorical_cols, [2, 3, 4])
+
             # TODO: batch training inputs?
 
     def test_forward(self):
@@ -258,7 +270,9 @@ class TestLCEGP(BotorchTestCase):
 
     def test_only_categorical_inputs(self):
         # testing the use case with purely categorical inputs
-        for dim, dtype, device in product((1, 3), self.dtype_list, self.device_list):
+        for dim, dtype, device, use_matern in product(
+                (1, 3), self.dtype_list, self.device_list, (False, True)
+        ):
             ckwargs = {"dtype": dtype, "device": device}
             num_train = 20
             train_X = torch.randint(0, 4, size=(num_train, dim), **ckwargs)
@@ -270,6 +284,7 @@ class TestLCEGP(BotorchTestCase):
                 categorical_cols=list(range(dim)),
                 embs_dim_list=list(range(1, dim + 1)),
                 outcome_transform=Standardize(m=1),
+                use_matern=use_matern,
             )
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             fit_gpytorch_model(mll)

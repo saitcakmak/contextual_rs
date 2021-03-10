@@ -35,6 +35,7 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
         embs_dim_list: Optional[List[int]] = None,
         outcome_transform: Optional[OutcomeTransform] = None,
         input_transform: Optional[InputTransform] = None,
+        use_matern: bool = False,
     ) -> None:
         r"""
         LCEGP with MaternKernel over continuous inputs and RBFKernel over
@@ -66,6 +67,8 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
                 `.posterior` on the model will be on the original scale).
             input_transform: An input transform that is applied in the model's
                 forward pass. Only applied to continuous columns of the input.
+            use_matern: This was originally designed with RBF kernel over embedding.
+                This adds an option to use a Matern kernel instead. This also has
         """
         self._validate_inputs(
             train_X=train_X,
@@ -151,13 +154,22 @@ class LCEGP(BatchedMultiOutputGPyTorchModel, ExactGP):
                 for x, y in self.emb_dims
             ]
         )
-        # TODO: this is a product kernel. May want to modify this in the future
-        self.emb_covar_module = RBFKernel(
-            ard_num_dims=n_embs,
-            lengthscale_constraint=Interval(
-                0.0, 2.0, transform=None, initial_value=1.0
-            ),
-        )
+        if use_matern:
+            self.emb_covar_module = MaternKernel(
+                nu=2.5,
+                ard_num_dims=n_embs,
+                lengthscale_prior=GammaPrior(3.0, 6.0),
+                lengthscale_constraint=Interval(
+                    0.0, 2.0, transform=None, initial_value=1.0
+                ),
+            )
+        else:
+            self.emb_covar_module = RBFKernel(
+                ard_num_dims=n_embs,
+                lengthscale_constraint=Interval(
+                    0.0, 2.0, transform=None, initial_value=1.0
+                ),
+            )
 
         self.categorical_cols = categorical_cols
         self.continuous_cols = continuous_cols
