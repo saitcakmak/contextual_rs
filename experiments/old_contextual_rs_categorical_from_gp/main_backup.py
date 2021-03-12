@@ -35,7 +35,10 @@ from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
 )
-from contextual_rs.finite_ikg import finite_ikg_maximizer, finite_ikg_maximizer_modellist
+from contextual_rs.finite_ikg import (
+    finite_ikg_maximizer,
+    finite_ikg_maximizer_modellist,
+)
 
 
 class GroundTruthModel:
@@ -101,8 +104,14 @@ class GroundTruthModel:
 
 
 def fit_lcegp(
-    X, Y, emb_dim, fit_tries, old_model: LCEGP = None, adam: bool = False,
-    use_matern: bool = False, use_outputscale: bool = False,
+    X,
+    Y,
+    emb_dim,
+    fit_tries,
+    old_model: LCEGP = None,
+    adam: bool = False,
+    use_matern: bool = False,
+    use_outputscale: bool = False,
 ) -> LCEGP:
     model = LCEGP(
         X,
@@ -111,7 +120,7 @@ def fit_lcegp(
         embs_dim_list=[emb_dim],
         outcome_transform=Standardize(m=1),
         use_matern=use_matern,
-        use_outputscale=use_outputscale
+        use_outputscale=use_outputscale,
     )
     if old_model:
         # initialize new model with old_model's state dict
@@ -123,7 +132,7 @@ def fit_lcegp(
             mll,
             optimizer=fit_gpytorch_torch,
             num_retries=fit_tries,
-            options={"disp": False}
+            options={"disp": False},
         )
     else:
         custom_fit_gpytorch_model(mll, num_retries=fit_tries)
@@ -135,8 +144,11 @@ def fit_modellist(X, Y, num_arms):
     model = ModelListGP(
         *[
             SingleTaskGP(
-                X[mask_list[i]][..., 1:], Y[mask_list[i]], outcome_transform=Standardize(m=1)
-            ) for i in range(num_arms)
+                X[mask_list[i]][..., 1:],
+                Y[mask_list[i]],
+                outcome_transform=Standardize(m=1),
+            )
+            for i in range(num_arms)
         ]
     )
     for m in model.models:
@@ -150,7 +162,7 @@ def fit_singletask(X, Y):
         X,
         Y,
         input_transform=Normalize(d=X.shape[-1]),
-        outcome_transform=Standardize(m=1)
+        outcome_transform=Standardize(m=1),
     )
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
@@ -158,9 +170,17 @@ def fit_singletask(X, Y):
 
 
 labels = [
-    "LCEGP", "Li", "Gao", "LCEGP_reuse", "ML_IKG",
-    "LCEGP_PCS_apx", "LCEGP_Matern", "LCEGP_Scale",
-    "ST_PCS", "ST_PCS_apx", "ST_IKG",
+    "LCEGP",
+    "Li",
+    "Gao",
+    "LCEGP_reuse",
+    "ML_IKG",
+    "LCEGP_PCS_apx",
+    "LCEGP_Matern",
+    "LCEGP_Scale",
+    "ST_PCS",
+    "ST_PCS_apx",
+    "ST_IKG",
 ]
 num_labels = len(labels)
 
@@ -228,8 +248,14 @@ def main(
     existing_iterations = 0
     all_alternatives = train_X[: num_arms * num_contexts].clone()
     pcs_estimates = [torch.zeros(iterations, **ckwargs) for _ in range(num_labels)]
-    correct_selection = [torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)]
-    X_list = [train_X.clone()] + [train_X_idx.clone() for _ in range(2)] + [train_X.clone() for _ in range(num_labels-3)]
+    correct_selection = [
+        torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)
+    ]
+    X_list = (
+        [train_X.clone()]
+        + [train_X_idx.clone() for _ in range(2)]
+        + [train_X.clone() for _ in range(num_labels - 3)]
+    )
     Y_list = [train_Y.clone() for _ in range(num_labels)]
     j_range = range(num_labels)
     if input_dict is not None:
@@ -241,20 +267,26 @@ def main(
                 raise ValueError("Existing output has as many or more iterations!")
             for j in range(num_labels):
                 pcs_estimates[j][:existing_iterations] = input_dict["pcs_estimates"][j]
-                correct_selection[j][:existing_iterations] = input_dict["correct_selection"][j]
+                correct_selection[j][:existing_iterations] = input_dict[
+                    "correct_selection"
+                ][j]
             X_list = input_dict["X_list"]
             Y_list = input_dict["Y_list"]
         elif mode == "-add":
             # adding new labels to existing output
             # currently only supporting adding a single new label.
-            if input_dict["labels"] == labels[:len(input_dict["labels"])]:
+            if input_dict["labels"] == labels[: len(input_dict["labels"])]:
                 assert len(input_dict["labels"]) < num_labels, "Already processed!"
                 j_range = range(len(input_dict["labels"]), num_labels)
                 # check that number of iterations did not change
                 assert iterations == input_dict["pcs_estimates"][0].shape[0]
                 # append the lists to accommodate new labels
-                pcs_estimates = input_dict["pcs_estimates"] + [torch.zeros(iterations, **ckwargs) for _ in j_range]
-                correct_selection = input_dict["correct_selection"] + [torch.zeros(iterations, num_contexts, **ckwargs) for _ in j_range]
+                pcs_estimates = input_dict["pcs_estimates"] + [
+                    torch.zeros(iterations, **ckwargs) for _ in j_range
+                ]
+                correct_selection = input_dict["correct_selection"] + [
+                    torch.zeros(iterations, num_contexts, **ckwargs) for _ in j_range
+                ]
                 X_list = input_dict["X_list"]
                 for j in j_range:
                     if any([_ in labels[j] for _ in ["LCEGP", "ML", "ST"]]):
@@ -288,7 +320,10 @@ def main(
                     )
                 else:
                     model = fit_lcegp(
-                        X_list[j], Y_list[j], emb_dim, fit_tries,
+                        X_list[j],
+                        Y_list[j],
+                        emb_dim,
+                        fit_tries,
                         old_model=old_model_list[j] if "reuse" in labels[j] else None,
                         adam="Adam" in labels[j],
                         use_matern="Matern" in labels[j],
@@ -305,9 +340,7 @@ def main(
                     )
                     model = ModelListGP(*models)
                 else:
-                    model = fit_modellist(
-                        X_list[j], Y_list[j], num_arms
-                    )
+                    model = fit_modellist(X_list[j], Y_list[j], num_arms)
                 old_model_list[j] = model
             elif "ST" in labels[j]:
                 if (i - existing_iterations) % fit_frequency != 0:
@@ -330,7 +363,9 @@ def main(
                     )
                 else:
                     pcs_vals = torch.zeros(all_alternatives.shape[0], **ckwargs)
-                    num_batches = math.ceil(all_alternatives.shape[0] / float(batch_size))
+                    num_batches = math.ceil(
+                        all_alternatives.shape[0] / float(batch_size)
+                    )
                     for k in range(num_batches):
                         l_idx = k * batch_size
                         r_idx = min(l_idx + batch_size, all_alternatives.shape[0])
@@ -339,14 +374,18 @@ def main(
                                 -1, 1, context_dim + 1
                             ),
                             model=model,
-                            model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies) if num_fantasies else None,
+                            model_sampler=SobolQMCNormalSampler(
+                                num_samples=num_fantasies
+                            )
+                            if num_fantasies
+                            else None,
                             arm_set=arm_set,
                             context_set=context_map,
                             num_samples=64,
                             base_samples=None,
                             func_I=lambda X: (X > 0).to(**ckwargs),
                             rho=lambda X: X.mean(dim=-2),
-                            use_approximation="apx" in labels[j]
+                            use_approximation="apx" in labels[j],
                         )
                     # if the estimate is 1 for multiple points, this would just pick 0,
                     # which is not ideal! Added randomization option
@@ -354,8 +393,12 @@ def main(
                         max_pcs = pcs_vals.max()
                         max_check = pcs_vals == max_pcs
                         max_count = max_check.sum()
-                        max_idcs = torch.arange(0, all_alternatives.shape[0], device=ckwargs["device"])[max_check]
-                        maximizer = max_idcs[torch.randint(max_count, (1,), device=ckwargs["device"])].squeeze()
+                        max_idcs = torch.arange(
+                            0, all_alternatives.shape[0], device=ckwargs["device"]
+                        )[max_check]
+                        maximizer = max_idcs[
+                            torch.randint(max_count, (1,), device=ckwargs["device"])
+                        ].squeeze()
                     else:
                         maximizer = pcs_vals.argmax()
                     next_arm = maximizer // num_contexts
@@ -420,7 +463,7 @@ def main(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

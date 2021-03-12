@@ -53,10 +53,14 @@ def fix_output(
     tm_maximizers = true_means.argmax(dim=0)
 
     start = time()
-    correct_selection = [torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)]
+    correct_selection = [
+        torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)
+    ]
     train_X = input_dict["train_X"]
     train_Y = input_dict["train_Y"]
-    all_alternatives = train_X[:num_arms * num_contexts].view(num_arms, num_contexts, context_dim + 1)
+    all_alternatives = train_X[: num_arms * num_contexts].view(
+        num_arms, num_contexts, context_dim + 1
+    )
     old_models = [None for _ in range(num_labels)]
     for i in range(iterations):
         if i % 10 == 0:
@@ -64,8 +68,16 @@ def fix_output(
         for j in range(num_labels):
             if i % fit_frequency_list[j] != 0:
                 model = old_models[j].condition_on_observations(
-                    X=train_X[train_data_size + (i - 1) * num_arms: train_data_size + i * num_arms].view(-1, context_dim + 1),
-                    Y=train_Y[train_data_size + (i - 1) * num_arms: train_data_size + i * num_arms].view(-1, 1),
+                    X=train_X[
+                        train_data_size
+                        + (i - 1) * num_arms : train_data_size
+                        + i * num_arms
+                    ].view(-1, context_dim + 1),
+                    Y=train_Y[
+                        train_data_size
+                        + (i - 1) * num_arms : train_data_size
+                        + i * num_arms
+                    ].view(-1, 1),
                 )
             else:
                 model = LCEGP(
@@ -73,7 +85,7 @@ def fix_output(
                     train_Y[: train_data_size + i * num_arms],
                     categorical_cols=[0],
                     embs_dim_list=[1],
-                    outcome_transform=Standardize(m=1)
+                    outcome_transform=Standardize(m=1),
                 )
                 mll = ExactMarginalLogLikelihood(model.likelihood, model)
                 custom_fit_gpytorch_model(mll, num_retries=fit_tries_list[j])
@@ -91,7 +103,7 @@ def fix_output(
         "train_Y": train_Y,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

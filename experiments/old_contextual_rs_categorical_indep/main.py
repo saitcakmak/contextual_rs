@@ -42,7 +42,7 @@ def model_constructor(model_type: str):
                 Y,
                 categorical_cols=[0, 1],
                 embs_dim_list=emb_dim_list,
-                outcome_transform=Standardize(m=1) if standardize else None
+                outcome_transform=Standardize(m=1) if standardize else None,
             )
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
             custom_fit_gpytorch_model(mll, num_retries=fit_tries)
@@ -118,7 +118,9 @@ def main(
     all_alternatives = train_X[: num_arms * num_contexts].clone()
     existing_iterations = 0
     pcs_estimates = [torch.zeros(iterations, **ckwargs) for _ in range(num_labels)]
-    correct_selection = [torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)]
+    correct_selection = [
+        torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)
+    ]
     X_list = [train_X.clone() for _ in range(num_labels)]
     Y_list = [train_Y.clone() for _ in range(num_labels)]
     if input_dict is not None:
@@ -127,7 +129,9 @@ def main(
             raise ValueError("Existing output has as many or more iterations!")
         for j in range(num_labels):
             pcs_estimates[j][:existing_iterations] = input_dict["pcs_estimates"][j]
-            correct_selection[j][:existing_iterations] = input_dict["correct_selection"][j]
+            correct_selection[j][:existing_iterations] = input_dict[
+                "correct_selection"
+            ][j]
             X_list[j] = input_dict["X_list"][j]
             Y_list[j] = input_dict["Y_list"][j]
     old_lcegp = None
@@ -144,7 +148,9 @@ def main(
                     Y=Y_list[j][-1].view(1, 1),
                 )
             else:
-                model = constructor(X_list[j], Y_list[j], emb_dim_list, fit_tries, standardize)
+                model = constructor(
+                    X_list[j], Y_list[j], emb_dim_list, fit_tries, standardize
+                )
 
             if j == 0:
                 # LCEGP
@@ -195,7 +201,9 @@ def main(
 
             # check for correct selection for empirical PCS
             if j == 0:
-                post_mean = model.posterior(all_alternatives.view(num_arms, num_contexts, 2)).mean.squeeze(-1)
+                post_mean = model.posterior(
+                    all_alternatives.view(num_arms, num_contexts, 2)
+                ).mean.squeeze(-1)
             else:
                 post_mean = model.means
 
@@ -209,7 +217,7 @@ def main(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

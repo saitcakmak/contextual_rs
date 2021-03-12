@@ -35,7 +35,10 @@ from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
 )
-from contextual_rs.finite_ikg import finite_ikg_maximizer, finite_ikg_maximizer_modellist
+from contextual_rs.finite_ikg import (
+    finite_ikg_maximizer,
+    finite_ikg_maximizer_modellist,
+)
 
 
 class GroundTruthModel:
@@ -101,8 +104,14 @@ class GroundTruthModel:
 
 
 def fit_lcegp(
-    X, Y, emb_dim, fit_tries, old_model: LCEGP = None, adam: bool = False,
-    use_matern: bool = False, use_outputscale: bool = False,
+    X,
+    Y,
+    emb_dim,
+    fit_tries,
+    old_model: LCEGP = None,
+    adam: bool = False,
+    use_matern: bool = False,
+    use_outputscale: bool = False,
 ) -> LCEGP:
     model = LCEGP(
         X,
@@ -111,7 +120,7 @@ def fit_lcegp(
         embs_dim_list=[emb_dim],
         outcome_transform=Standardize(m=1),
         use_matern=use_matern,
-        use_outputscale=use_outputscale
+        use_outputscale=use_outputscale,
     )
     if old_model:
         # initialize new model with old_model's state dict
@@ -123,7 +132,7 @@ def fit_lcegp(
             mll,
             optimizer=fit_gpytorch_torch,
             num_retries=fit_tries,
-            options={"disp": False}
+            options={"disp": False},
         )
     else:
         custom_fit_gpytorch_model(mll, num_retries=fit_tries)
@@ -135,8 +144,11 @@ def fit_modellist(X, Y, num_arms):
     model = ModelListGP(
         *[
             SingleTaskGP(
-                X[mask_list[i]][..., 1:], Y[mask_list[i]], outcome_transform=Standardize(m=1)
-            ) for i in range(num_arms)
+                X[mask_list[i]][..., 1:],
+                Y[mask_list[i]],
+                outcome_transform=Standardize(m=1),
+            )
+            for i in range(num_arms)
         ]
     )
     for m in model.models:
@@ -150,7 +162,7 @@ def fit_singletask(X, Y):
         X,
         Y,
         input_transform=Normalize(d=X.shape[-1]),
-        outcome_transform=Standardize(m=1)
+        outcome_transform=Standardize(m=1),
     )
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
@@ -158,9 +170,17 @@ def fit_singletask(X, Y):
 
 
 labels = [
-    "LCEGP", "Li", "Gao", "LCEGP_reuse", "ML_IKG",
-    "LCEGP_PCS_apx", "LCEGP_Matern", "LCEGP_Scale",
-    "ST_PCS", "ST_PCS_apx", "ST_IKG",
+    "LCEGP",
+    "Li",
+    "Gao",
+    "LCEGP_reuse",
+    "ML_IKG",
+    "LCEGP_PCS_apx",
+    "LCEGP_Matern",
+    "LCEGP_Scale",
+    "ST_PCS",
+    "ST_PCS_apx",
+    "ST_IKG",
 ]
 num_labels = len(labels)
 
@@ -226,9 +246,7 @@ def main(
             .view(-1, 2)
             .repeat(num_full_train, 1)
         )
-    Y = torch.cat(
-        [ground_truth.evaluate_all() for _ in range(num_full_train)], dim=0
-    )
+    Y = torch.cat([ground_truth.evaluate_all() for _ in range(num_full_train)], dim=0)
 
     start = time()
     existing_iterations = 0
@@ -251,7 +269,9 @@ def main(
     old_model = None
     for i in range(existing_iterations, iterations):
         if i % 10 == 0:
-            print(f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}")
+            print(
+                f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
+            )
         if "LCEGP" in label:
             if (i - existing_iterations) % fit_frequency != 0:
                 # in this case, we will not re-train LCEGP.
@@ -262,7 +282,10 @@ def main(
                 )
             else:
                 model = fit_lcegp(
-                    X, Y, emb_dim, fit_tries,
+                    X,
+                    Y,
+                    emb_dim,
+                    fit_tries,
                     old_model=old_model if "reuse" in label else None,
                     adam="Adam" in label,
                     use_matern="Matern" in label,
@@ -279,9 +302,7 @@ def main(
                 )
                 model = ModelListGP(*models)
             else:
-                model = fit_modellist(
-                    X, Y, num_arms
-                )
+                model = fit_modellist(X, Y, num_arms)
             old_model = model
         elif "ST" in label:
             if (i - existing_iterations) % fit_frequency != 0:
@@ -317,7 +338,9 @@ def main(
                             -1, 1, context_dim + 1
                         ),
                         model=model,
-                        model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies) if num_fantasies else None,
+                        model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies)
+                        if num_fantasies
+                        else None,
                         arm_set=arm_set,
                         context_set=context_map,
                         num_samples=64,
@@ -332,8 +355,12 @@ def main(
                     max_pcs = pcs_vals.max()
                     max_check = pcs_vals == max_pcs
                     max_count = max_check.sum()
-                    max_idcs = torch.arange(0, all_alternatives.shape[0], device=ckwargs["device"])[max_check]
-                    maximizer = max_idcs[torch.randint(max_count, (1,), device=ckwargs["device"])].squeeze()
+                    max_idcs = torch.arange(
+                        0, all_alternatives.shape[0], device=ckwargs["device"]
+                    )[max_check]
+                    maximizer = max_idcs[
+                        torch.randint(max_count, (1,), device=ckwargs["device"])
+                    ].squeeze()
                 else:
                     maximizer = pcs_vals.argmax()
                 next_arm = maximizer // num_contexts
@@ -400,7 +427,7 @@ def main(
         "Y": Y,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

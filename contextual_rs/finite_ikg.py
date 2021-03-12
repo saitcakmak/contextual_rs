@@ -79,7 +79,10 @@ def _get_s_tilde(model: Model, X, x) -> Tensor:
 
 
 def finite_ikg_maximizer(
-    model: LCEGP, arm_set: Tensor, context_set: Tensor, randomize_ties: bool = True,
+    model: LCEGP,
+    arm_set: Tensor,
+    context_set: Tensor,
+    randomize_ties: bool = True,
 ) -> Tensor:
     r"""
     Find the maximizer of IKG, using exact computations over finite
@@ -177,7 +180,9 @@ def _get_modellist_s_tilde(model: ModelListGP, context_set: Tensor) -> Tensor:
 
 
 def finite_ikg_maximizer_modellist(
-    model: ModelListGP, context_set: Tensor, randomize_ties: bool = True,
+    model: ModelListGP,
+    context_set: Tensor,
+    randomize_ties: bool = True,
 ) -> Tuple[int, int]:
     r"""
     Modified to work with MLGP

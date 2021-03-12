@@ -108,7 +108,7 @@ def fit_lcegp_adam(X, Y, emb_dim, fit_tries):
         mll,
         optimizer=fit_gpytorch_torch,
         num_retries=fit_tries,
-        options={"disp": False}
+        options={"disp": False},
     )
     return model
 
@@ -164,7 +164,9 @@ def main(
     assert iterations == existing_iterations
     all_alternatives = train_X[: num_arms * num_contexts].clone()
     pcs_estimates = input_dict["pcs_estimates"] + [torch.zeros(iterations, **ckwargs)]
-    correct_selection = input_dict["correct_selection"] + [torch.zeros(iterations, num_contexts, **ckwargs)]
+    correct_selection = input_dict["correct_selection"] + [
+        torch.zeros(iterations, num_contexts, **ckwargs)
+    ]
     X_list = input_dict["X_list"] + [train_X]
     Y_list = input_dict["Y_list"] + [train_Y.clone()]
     labels = input_dict["labels"] + ["LCEGP_Adam"]
@@ -192,12 +194,11 @@ def main(
             l_idx = k * batch_size
             r_idx = min(l_idx + batch_size, all_alternatives.shape[0])
             pcs_vals[l_idx:r_idx] = estimate_lookahead_generalized_pcs(
-                candidate=all_alternatives[l_idx:r_idx].view(
-                    -1, 1, context_dim + 1
-                ),
+                candidate=all_alternatives[l_idx:r_idx].view(-1, 1, context_dim + 1),
                 model=model,
-                model_sampler=SobolQMCNormalSampler(
-                    num_samples=num_fantasies) if num_fantasies else None,
+                model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies)
+                if num_fantasies
+                else None,
                 arm_set=arm_set,
                 context_set=context_map,
                 num_samples=64,
@@ -228,7 +229,9 @@ def main(
         )
 
         # check for correct selection for empirical PCS
-        post_mean = model.posterior(all_alternatives.view(num_arms, num_contexts, context_dim + 1)).mean.squeeze(-1)
+        post_mean = model.posterior(
+            all_alternatives.view(num_arms, num_contexts, context_dim + 1)
+        ).mean.squeeze(-1)
 
         maximizers = post_mean.argmax(dim=0)
 
@@ -240,7 +243,7 @@ def main(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

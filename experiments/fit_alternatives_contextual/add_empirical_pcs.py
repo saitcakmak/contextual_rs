@@ -53,10 +53,14 @@ def fix_output(
     tm_maximizers = true_means.argmax(dim=0)
 
     start = time()
-    correct_selection = [torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)]
+    correct_selection = [
+        torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)
+    ]
     X_list = input_dict["X_list"]
     Y_list = input_dict["Y_list"]
-    all_alternatives = X_list[0][:num_arms * num_contexts].view(num_arms, num_contexts, context_dim + 1)
+    all_alternatives = X_list[0][: num_arms * num_contexts].view(
+        num_arms, num_contexts, context_dim + 1
+    )
     old_models = [None for _ in range(num_labels)]
     for i in range(iterations):
         if i % 10 == 0:
@@ -73,7 +77,7 @@ def fix_output(
                     Y_list[j][: train_data_size + i],
                     categorical_cols=[0],
                     embs_dim_list=[1],
-                    outcome_transform=Standardize(m=1)
+                    outcome_transform=Standardize(m=1),
                 )
                 mll = ExactMarginalLogLikelihood(model.likelihood, model)
                 custom_fit_gpytorch_model(mll, num_retries=fit_tries_list[j])
@@ -91,7 +95,7 @@ def fix_output(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

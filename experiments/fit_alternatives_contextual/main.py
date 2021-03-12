@@ -158,7 +158,9 @@ def main(
     start = time()
     all_alternatives = train_X[: num_arms * num_contexts].clone()
     pcs_estimates = [torch.zeros(iterations, **ckwargs) for _ in range(num_labels)]
-    correct_selection = [torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)]
+    correct_selection = [
+        torch.zeros(iterations, num_contexts, **ckwargs) for _ in range(num_labels)
+    ]
     X_list = [train_X.clone() for _ in range(num_labels)]
     Y_list = [train_Y.clone() for _ in range(num_labels)]
     old_models = [None for _ in range(num_labels)]
@@ -188,7 +190,9 @@ def main(
                         -1, 1, context_dim + 1
                     ),
                     model=model,
-                    model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies) if num_fantasies else None,
+                    model_sampler=SobolQMCNormalSampler(num_samples=num_fantasies)
+                    if num_fantasies
+                    else None,
                     arm_set=arm_set,
                     context_set=context_map,
                     num_samples=64,
@@ -220,7 +224,9 @@ def main(
             )
 
             # check for correct selection for empirical PCS
-            post_mean = model.posterior(all_alternatives).mean.view(num_arms, num_contexts)
+            post_mean = model.posterior(all_alternatives).mean.view(
+                num_arms, num_contexts
+            )
 
             maximizers = post_mean.argmax(dim=0)
 
@@ -232,7 +238,7 @@ def main(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 

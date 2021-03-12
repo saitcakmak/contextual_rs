@@ -157,7 +157,9 @@ def main(
     assert iterations == existing_iterations
     all_alternatives = train_X[: num_arms * num_contexts].clone()
     pcs_estimates = input_dict["pcs_estimates"] + [torch.zeros(iterations, **ckwargs)]
-    correct_selection = input_dict["correct_selection"] + [torch.zeros(iterations, num_contexts, **ckwargs)]
+    correct_selection = input_dict["correct_selection"] + [
+        torch.zeros(iterations, num_contexts, **ckwargs)
+    ]
     X_list = input_dict["X_list"] + [train_X]
     Y_list = input_dict["Y_list"] + [train_Y.clone()]
     labels = input_dict["labels"] + ["LCEGP_IKG"]
@@ -197,7 +199,9 @@ def main(
         )
 
         # check for correct selection for empirical PCS
-        post_mean = model.posterior(all_alternatives.view(num_arms, num_contexts, context_dim + 1)).mean.squeeze(-1)
+        post_mean = model.posterior(
+            all_alternatives.view(num_arms, num_contexts, context_dim + 1)
+        ).mean.squeeze(-1)
 
         maximizers = post_mean.argmax(dim=0)
 
@@ -209,7 +213,7 @@ def main(
         "Y_list": Y_list,
         "true_means": true_means,
         "pcs_estimates": pcs_estimates,
-        "correct_selection": correct_selection
+        "correct_selection": correct_selection,
     }
     return output_dict
 
