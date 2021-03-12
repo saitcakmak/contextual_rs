@@ -10,7 +10,8 @@ It is the algorithm 1 but also includes a bit that is presented in alg 2.
 from typing import Tuple
 
 import torch
-from botorch.models import ModelListGP
+from botorch.models import ModelListGP, SingleTaskGP
+from botorch.models.model import Model
 from scipy.stats import norm
 from torch import Tensor
 
@@ -60,7 +61,26 @@ def _pearce_alg_1(a: Tensor, b: Tensor) -> Tensor:
     return v
 
 
-def finite_ikg_maximizer(model: LCEGP, arm_set: Tensor, context_set: Tensor) -> Tensor:
+def _get_s_tilde(model: Model, X, x) -> Tensor:
+    if isinstance(model, LCEGP):
+        return model.get_s_tilde_general(X, x)
+    elif isinstance(model, SingleTaskGP):
+        q = X.shape[-2]
+        x_cat = torch.cat([x.expand(X.shape[:-2] + x.shape), X], dim=-2)
+        full_mvn = model(x_cat)
+        full_covar = full_mvn.covariance_matrix
+        noise = model.likelihood.noise.squeeze()
+        K_x_X = full_covar[..., :-q, -q:]
+        K_X_X = full_covar[..., -q:, -q:]
+        chol = torch.cholesky(K_X_X + torch.diag(noise.expand(q)).expand_as(K_X_X))
+        return K_x_X.matmul(chol.inverse())
+    else:
+        raise NotImplementedError
+
+
+def finite_ikg_maximizer(
+    model: LCEGP, arm_set: Tensor, context_set: Tensor, randomize_ties: bool = True,
+) -> Tensor:
     r"""
     Find the maximizer of IKG, using exact computations over finite
     arm and context sets.
@@ -75,6 +95,8 @@ def finite_ikg_maximizer(model: LCEGP, arm_set: Tensor, context_set: Tensor) -> 
         model: An LCEGP instance, for which to find the maximizer of IKG.
         arm_set: A `num_arms x 1`-dim tensor of arm set.
         context_set: A `num_contexts x d_c`-dim tensor of context set.
+        randomize_ties: If True and there are multiple maximizers,
+            the result will be randomly selected.
 
     Returns:
         A `1 x d`-dim tensor denoting the arm-context pair maximizing IKG.
@@ -95,13 +117,14 @@ def finite_ikg_maximizer(model: LCEGP, arm_set: Tensor, context_set: Tensor) -> 
     means = model.posterior(arm_context_pairs).mean.squeeze(-1)
 
     # this is (num_arms * num_contexts) x (num_arms * num_contexts) x 1
-    full_sigma_tilde = model.get_s_tilde_general(
+    full_sigma_tilde = _get_s_tilde(
+        model=model,
         X=arm_context_pairs.view(-1, 1, dim),
         x=arm_context_pairs.view(num_arms * num_contexts, -1),
     )
 
     max_ikg_val = torch.tensor(float("-inf")).to(arm_set)
-    max_idx = None
+    max_idx = list()
     # loop over each candidate and calculate IKG value
     for idx, all_s_tilde in enumerate(full_sigma_tilde):
         ikg_val = torch.tensor(0).to(arm_set)
@@ -110,8 +133,14 @@ def finite_ikg_maximizer(model: LCEGP, arm_set: Tensor, context_set: Tensor) -> 
             ikg_val += _pearce_alg_1(means[:, c_idx], shaped_s_tilde[:, c_idx])
         if ikg_val > max_ikg_val:
             max_ikg_val = ikg_val
-            max_idx = idx
-
+            max_idx = [idx]
+        elif ikg_val == max_ikg_val:
+            max_idx.append(idx)
+    if randomize_ties:
+        rand_idx = int(torch.randint(0, len(max_idx), (1,)))
+        max_idx = max_idx[rand_idx]
+    else:
+        max_idx = max_idx[0]
     return arm_context_pairs.view(-1, dim)[max_idx].view(-1, dim)
 
 
@@ -148,7 +177,7 @@ def _get_modellist_s_tilde(model: ModelListGP, context_set: Tensor) -> Tensor:
 
 
 def finite_ikg_maximizer_modellist(
-    model: ModelListGP, context_set: Tensor
+    model: ModelListGP, context_set: Tensor, randomize_ties: bool = True,
 ) -> Tuple[int, int]:
     r"""
     Modified to work with MLGP
@@ -156,6 +185,8 @@ def finite_ikg_maximizer_modellist(
     Args:
         model: A ModelListGP with a model corresponding to each arm.
         context_set: A `num_contexts x d_c`-dim tensor of context set.
+        randomize_ties: If True and there are multiple maximizers,
+            the result will be randomly selected.
 
     Returns:
         A tuple of arm and context indices corresponding to the maximizer.
@@ -173,7 +204,7 @@ def finite_ikg_maximizer_modellist(
     full_sigma_tilde = full_sigma_tilde.view(-1, num_contexts)
 
     max_ikg_val = torch.tensor(float("-inf")).to(context_set)
-    max_idx = None
+    max_idx = list()
     # loop over each candidate and calculate IKG value
     #   original all_s_tilde is num_arms x num_contexts.
     #   This one is num_contexts. All other arms actually have s_tilde=0
@@ -188,6 +219,12 @@ def finite_ikg_maximizer_modellist(
             ikg_val += _pearce_alg_1(means[:, c_idx], expanded_s_tilde[:, c_idx])
         if ikg_val > max_ikg_val:
             max_ikg_val = ikg_val
-            max_idx = idx
-
+            max_idx = [idx]
+        elif ikg_val == max_ikg_val:
+            max_idx.append(idx)
+    if randomize_ties:
+        rand_idx = int(torch.randint(0, len(max_idx), (1,)))
+        max_idx = max_idx[rand_idx]
+    else:
+        max_idx = max_idx[0]
     return max_idx // num_contexts, max_idx % num_contexts
