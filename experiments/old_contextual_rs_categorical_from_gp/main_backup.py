@@ -15,8 +15,9 @@ from typing import Union, List, Optional
 
 import numpy as np
 import torch
-from botorch.models import SingleTaskGP
-from botorch.models.transforms import Standardize
+from botorch import fit_gpytorch_model
+from botorch.models import SingleTaskGP, ModelListGP
+from botorch.models.transforms import Standardize, Normalize
 from botorch.optim.fit import fit_gpytorch_torch
 from botorch.sampling import SobolQMCNormalSampler
 from torch import Tensor
@@ -34,7 +35,7 @@ from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
 )
-from contextual_rs.finite_ikg import finite_ikg_maximizer
+from contextual_rs.finite_ikg import finite_ikg_maximizer, finite_ikg_maximizer_modellist
 
 
 class GroundTruthModel:
@@ -99,43 +100,68 @@ class GroundTruthModel:
         return true_evals + torch.randn_like(true_evals) * self.observation_noise
 
 
-def fit_lcegp(X, Y, emb_dim, fit_tries, old_model: LCEGP = None):
+def fit_lcegp(
+    X, Y, emb_dim, fit_tries, old_model: LCEGP = None, adam: bool = False,
+    use_matern: bool = False, use_outputscale: bool = False,
+) -> LCEGP:
     model = LCEGP(
         X,
         Y,
         categorical_cols=[0],
         embs_dim_list=[emb_dim],
         outcome_transform=Standardize(m=1),
+        use_matern=use_matern,
+        use_outputscale=use_outputscale
     )
     if old_model:
         # initialize new model with old_model's state dict
         old_state_dict = old_model.state_dict()
         model.load_state_dict(old_state_dict)
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    custom_fit_gpytorch_model(mll, num_retries=fit_tries)
+    if adam:
+        custom_fit_gpytorch_model(
+            mll,
+            optimizer=fit_gpytorch_torch,
+            num_retries=fit_tries,
+            options={"disp": False}
+        )
+    else:
+        custom_fit_gpytorch_model(mll, num_retries=fit_tries)
     return model
 
 
-def fit_lcegp_adam(X, Y, emb_dim, fit_tries):
-    model = LCEGP(
+def fit_modellist(X, Y, num_arms):
+    mask_list = [X[..., 0] == i for i in range(num_arms)]
+    model = ModelListGP(
+        *[
+            SingleTaskGP(
+                X[mask_list[i]][..., 1:], Y[mask_list[i]], outcome_transform=Standardize(m=1)
+            ) for i in range(num_arms)
+        ]
+    )
+    for m in model.models:
+        mll = ExactMarginalLogLikelihood(m.likelihood, m)
+        fit_gpytorch_model(mll)
+    return model
+
+
+def fit_singletask(X, Y):
+    model = SingleTaskGP(
         X,
         Y,
-        categorical_cols=[0],
-        embs_dim_list=[emb_dim],
-        outcome_transform=Standardize(m=1),
+        input_transform=Normalize(d=X.shape[-1]),
+        outcome_transform=Standardize(m=1)
     )
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-
-    custom_fit_gpytorch_model(
-        mll,
-        optimizer=fit_gpytorch_torch,
-        num_retries=fit_tries,
-        options={"disp": False}
-    )
+    fit_gpytorch_model(mll)
     return model
 
 
-labels = ["LCEGP", "Li", "Gao", "LCEGP_reuse"]
+labels = [
+    "LCEGP", "Li", "Gao", "LCEGP_reuse", "ML_IKG",
+    "LCEGP_PCS_apx", "LCEGP_Matern", "LCEGP_Scale",
+    "ST_PCS", "ST_PCS_apx", "ST_IKG",
+]
 num_labels = len(labels)
 
 
@@ -216,24 +242,38 @@ def main(
             for j in range(num_labels):
                 pcs_estimates[j][:existing_iterations] = input_dict["pcs_estimates"][j]
                 correct_selection[j][:existing_iterations] = input_dict["correct_selection"][j]
-                X_list[j] = input_dict["X_list"][j]
-                Y_list[j] = input_dict["Y_list"][j]
+            X_list = input_dict["X_list"]
+            Y_list = input_dict["Y_list"]
         elif mode == "-add":
             # adding new labels to existing output
             # currently only supporting adding a single new label.
-            assert input_dict["labels"] == labels[:-1], "Only supports adding 1 label!"
-            # check that number of iterations did not change
-            assert iterations == input_dict["pcs_estimates"][0].shape[0]
-            pcs_estimates = input_dict["pcs_estimates"] + [torch.zeros(iterations, **ckwargs)]
-            correct_selection = input_dict["correct_selection"] + [torch.zeros(iterations, num_contexts, **ckwargs)]
-            t_X = train_X.clone() if "LCEGP" in labels[-1] else train_X_idx.clone()
-            X_list = input_dict["X_list"] + [t_X]
-            Y_list = input_dict["Y_list"] + [train_Y.clone()]
-            j_range = [-1]
+            if input_dict["labels"] == labels[:len(input_dict["labels"])]:
+                assert len(input_dict["labels"]) < num_labels, "Already processed!"
+                j_range = range(len(input_dict["labels"]), num_labels)
+                # check that number of iterations did not change
+                assert iterations == input_dict["pcs_estimates"][0].shape[0]
+                # append the lists to accommodate new labels
+                pcs_estimates = input_dict["pcs_estimates"] + [torch.zeros(iterations, **ckwargs) for _ in j_range]
+                correct_selection = input_dict["correct_selection"] + [torch.zeros(iterations, num_contexts, **ckwargs) for _ in j_range]
+                X_list = input_dict["X_list"]
+                for j in j_range:
+                    if any([_ in labels[j] for _ in ["LCEGP", "ML", "ST"]]):
+                        t_X = train_X.clone()
+                    else:
+                        t_X = train_X_idx.clone()
+                    X_list.append(t_X)
+                Y_list = input_dict["Y_list"] + [train_Y.clone() for _ in j_range]
+                # check that everything is set properly
+                for l in [X_list, Y_list, pcs_estimates, correct_selection]:
+                    assert len(l) == num_labels
+            else:
+                raise RuntimeError(
+                    "Existing labels do not agree with current label list!"
+                )
         else:
             # This should never happen!
             raise RuntimeError
-    old_lcegp_list = [None] * num_labels
+    old_model_list = [None] * num_labels
     for i in range(existing_iterations, iterations):
         if i % 10 == 0:
             print(f"Starting seed {seed}, iteration {i}, time: {time()-start}")
@@ -242,24 +282,47 @@ def main(
                 if (i - existing_iterations) % fit_frequency != 0:
                     # in this case, we will not re-train LCEGP.
                     # we will just condition on observations.
-                    model = old_lcegp_list[j].condition_on_observations(
+                    model = old_model_list[j].condition_on_observations(
                         X=X_list[j][-1].view(1, -1),
                         Y=Y_list[j][-1].view(1, 1),
                     )
                 else:
-                    if "Adam" in labels[j]:
-                        model = fit_lcegp_adam(X_list[j], Y_list[j], emb_dim, fit_tries)
-                    else:
-                        model = fit_lcegp(
-                            X_list[j], Y_list[j], emb_dim, fit_tries,
-                            old_model=old_lcegp_list[j] if "reuse" in labels[j] else None
-                        )
-                old_lcegp_list[j] = model
+                    model = fit_lcegp(
+                        X_list[j], Y_list[j], emb_dim, fit_tries,
+                        old_model=old_model_list[j] if "reuse" in labels[j] else None,
+                        adam="Adam" in labels[j],
+                        use_matern="Matern" in labels[j],
+                        use_outputscale="Scale" in labels[j],
+                    )
+                old_model_list[j] = model
+            elif "ML" in labels[j]:
+                if (i - existing_iterations) % fit_frequency != 0:
+                    last_X = X_list[j][-1].view(1, -1)
+                    last_idx = int(last_X[0, 0])
+                    models = old_model_list[j].models
+                    models[last_idx] = models[last_idx].condition_on_observations(
+                        X=last_X[:, 1:], Y=Y_list[j][-1].view(-1, 1)
+                    )
+                    model = ModelListGP(*models)
+                else:
+                    model = fit_modellist(
+                        X_list[j], Y_list[j], num_arms
+                    )
+                old_model_list[j] = model
+            elif "ST" in labels[j]:
+                if (i - existing_iterations) % fit_frequency != 0:
+                    model = old_model_list[j].condition_on_observations(
+                        X=X_list[j][-1].view(1, -1),
+                        Y=Y_list[j][-1].view(1, 1),
+                    )
+                else:
+                    model = fit_singletask(X_list[j], Y_list[j])
+                old_model_list[j] = model
             else:
                 model = ContextualIndependentModel(X_list[j], Y_list[j].squeeze(-1))
 
-            if "LCEGP" in labels[j]:
-                # LCEGP
+            if "LCEGP" in labels[j] or "ST" in labels[j]:
+                # LCEGP or SingleTaskGP
                 if "IKG" in labels[j]:
                     next_point = finite_ikg_maximizer(model, arm_set, context_map)
                     next_eval = ground_truth.evaluate(
@@ -283,6 +346,7 @@ def main(
                             base_samples=None,
                             func_I=lambda X: (X > 0).to(**ckwargs),
                             rho=lambda X: X.mean(dim=-2),
+                            use_approximation="apx" in labels[j]
                         )
                     # if the estimate is 1 for multiple points, this would just pick 0,
                     # which is not ideal! Added randomization option
@@ -299,6 +363,17 @@ def main(
                     next_point = torch.cat(
                         [torch.tensor([next_arm], **ckwargs), context_map[next_context]]
                     ).view(1, -1)
+            elif "ML" in labels[j]:
+                # ModelListGP
+                if "IKG" in labels[j]:
+                    next_arm, next_context = finite_ikg_maximizer_modellist(
+                        model, context_map
+                    )
+                    next_point = torch.cat(
+                        [torch.tensor([next_arm], **ckwargs), context_map[next_context]]
+                    ).view(1, -1)
+                else:
+                    raise NotImplementedError
             else:
                 if j == 1:
                     # Li
@@ -308,7 +383,7 @@ def main(
                     next_arm, next_context = gao_sampling_strategy(model)
                 next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
-            if "IKG" not in labels[j]:
+            if labels[j] not in ["LCEGP_IKG", "ST_IKG"]:
                 next_eval = ground_truth.evaluate_w_index(next_arm, next_context)
 
             X_list[j] = torch.cat([X_list[j], next_point], dim=0)
@@ -326,8 +401,12 @@ def main(
             )
 
             # check for correct selection for empirical PCS
-            if "LCEGP" in labels[j]:
-                post_mean = model.posterior(all_alternatives.view(num_arms, num_contexts, context_dim + 1)).mean.squeeze(-1)
+            if "LCEGP" in labels[j] or "ST" in labels[j]:
+                post_mean = model.posterior(
+                    all_alternatives.view(num_arms, num_contexts, context_dim + 1)
+                ).mean.squeeze(-1)
+            elif "ML" in labels[j]:
+                post_mean = model.posterior(context_map).mean.t()
             else:
                 post_mean = model.means
 
