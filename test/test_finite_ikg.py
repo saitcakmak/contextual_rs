@@ -46,7 +46,7 @@ class TestFiniteIKG(BotorchTestCase):
                 candidates=candidates,
                 model=model,
                 arm_set=arm_set,
-                context_set=context_set
+                context_set=context_set,
             )
             self.assertEqual(ikg_vals.shape, torch.Size([5]))
 
@@ -73,8 +73,6 @@ class TestFiniteIKG(BotorchTestCase):
             candidates = torch.rand(5, 1, 3, **ckwargs)
             candidates[..., 0] = torch.tensor([0, 1, 2, 1, 0], **ckwargs).unsqueeze(-1)
             ikg_vals = finite_ikg_eval_modellist(
-                candidates=candidates,
-                model=model,
-                context_set=context_set
+                candidates=candidates, model=model, context_set=context_set
             )
             self.assertEqual(ikg_vals.shape, torch.Size([5]))

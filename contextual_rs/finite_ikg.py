@@ -312,6 +312,7 @@ def finite_ikg_eval_modellist(
         ikg_vals[idx] = ikg_val
     return ikg_vals
 
+
 def finite_ikg_maximizer_modellist(
     model: ModelListGP,
     context_set: Tensor,

@@ -68,7 +68,7 @@ def contextual_complete_ei(
     # sort the means and covariances
     means, indices = means.sort(dim=-1, descending=True)
     # calculate deltas for future use - deltas are all negative (max - others)
-    deltas = - means[..., :1].expand(*means.shape[:-1], num_arms - 1) + means[..., 1:]
+    deltas = -means[..., :1].expand(*means.shape[:-1], num_arms - 1) + means[..., 1:]
     # sort the covariances in the same way
     covars = covars.gather(dim=-2, index=indices.unsqueeze(-1).expand_as(covars))
     # this does the columns, second arm dim
@@ -84,12 +84,12 @@ def contextual_complete_ei(
     )
     # writing dimensions explicitly as an implicit shape check
     S_e_upper = c_first.expand(*c_first.shape[:-2], num_arms - 1, 2 * num_arms - 2)
-    S_e_low_left = S_e_upper[..., num_arms - 1:].transpose(-1, -2)
+    S_e_low_left = S_e_upper[..., num_arms - 1 :].transpose(-1, -2)
     S_e_lower = torch.cat([S_e_low_left, covars[..., 1:, 1:]], dim=-1)
     # A_e S_e product, equivalent to upper - lower
     A_S = S_e_upper - S_e_lower
     # The second matrix product, first half - second half (over last dim)
-    S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1:]
+    S_d = A_S[..., : num_arms - 1] - A_S[..., num_arms - 1 :]
     # S_d here is the covariance of the differences.
     # We are only interested in the diagonals for CEI.
     # Diagonals give the variance of difference between the best arm and the one
