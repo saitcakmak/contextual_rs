@@ -84,7 +84,7 @@ def estimate_lookahead_generalized_pcs(
         The estimate of the lookahead generalized PCS. Tensor of size `n`.
     """
     # input data verification
-    assert arm_set.dim() == 2 and context_set.dim() == 2
+    assert arm_set.dim() == 2 and context_set.dim() in [2, 3]
     assert arm_set.shape[-1] + context_set.shape[-1] == candidate.shape[-1]
     if candidate.dim() < 3:
         candidate = candidate.unsqueeze(0)
@@ -93,7 +93,10 @@ def estimate_lookahead_generalized_pcs(
     # define for future reference
     full_dim = candidate.shape[-1]
     num_arms = arm_set.shape[0]
-    num_contexts = context_set.shape[0]
+    num_contexts = context_set.shape[-2]
+
+    if context_set.dim() == 2:
+        context_set = context_set.repeat(num_arms, 1, 1)
 
     # generate the fantasy model
     if model_sampler is not None:
@@ -110,8 +113,8 @@ def estimate_lookahead_generalized_pcs(
     # generate the tensor of arm-context pairs
     arm_context_pairs = torch.cat(
         [
-            arm_set.unsqueeze(-2).expand(-1, context_set.shape[0], -1),
-            context_set.expand(arm_set.shape[0], -1, -1),
+            arm_set.unsqueeze(-2).expand(-1, num_contexts, -1),
+            context_set,
         ],
         dim=-1,
     ).reshape(num_arms * num_contexts, full_dim)
@@ -241,18 +244,21 @@ def estimate_current_generalized_pcs(
         The estimate of the generalized PCS. A scalar tensor.
     """
     # input data verification
-    assert arm_set.dim() == 2 and context_set.dim() == 2
+    assert arm_set.dim() == 2 and context_set.dim() in [2, 3]
 
     # define for future reference
     full_dim = arm_set.shape[-1] + context_set.shape[-1]
     num_arms = arm_set.shape[0]
-    num_contexts = context_set.shape[0]
+    num_contexts = context_set.shape[-2]
+
+    if context_set.dim() == 2:
+        context_set = context_set.repeat(num_arms, 1, 1)
 
     # generate the tensor of arm-context pairs
     arm_context_pairs = torch.cat(
         [
-            arm_set.unsqueeze(-2).expand(-1, context_set.shape[0], -1),
-            context_set.expand(arm_set.shape[0], -1, -1),
+            arm_set.unsqueeze(-2).expand(-1, num_contexts, -1),
+            context_set,
         ],
         dim=-1,
     ).reshape(num_arms * num_contexts, full_dim)

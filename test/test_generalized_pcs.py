@@ -137,12 +137,13 @@ class TestGeneralizedPCS(BotorchTestCase):
                 self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
 
             # check that the certainty equivalent approximation works fine
+            # also tests 3-dim context_set
             pcs = estimate_lookahead_generalized_pcs(
                 candidate=candidate,
                 model=model,
                 model_sampler=None,
                 arm_set=arm_set,
-                context_set=context_set,
+                context_set=torch.rand(num_arms, num_contexts, dim_c),
                 num_samples=num_samples,
                 base_samples=base_samples,
                 func_I=func_I,
