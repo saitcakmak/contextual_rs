@@ -7,7 +7,7 @@ with some minor differences in the quantities. Frazier aims to find the
 maximizer of the KG only, whereas Pearce aims to find the KG value.
 It is the algorithm 1 but also includes a bit that is presented in alg 2.
 """
-from typing import Tuple
+from typing import Tuple, Optional
 
 import torch
 from botorch.models import ModelListGP, SingleTaskGP
@@ -78,6 +78,60 @@ def _get_s_tilde(model: Model, X, x) -> Tensor:
         raise NotImplementedError
 
 
+def finite_ikg_eval(
+    candidates: Tensor,
+    model: LCEGP,
+    arm_set: Tensor,
+    context_set: Tensor,
+) -> Tensor:
+    r"""
+    Calculate the value of IKG for the given candidates, using exact
+    computations over finite arm and context sets.
+
+    Args:
+        candidates: An `n x 1 x d`-dim tensor of candidates.
+        model: An LCEGP instance, for which to find the maximizer of IKG.
+        arm_set: A `num_arms x 1`-dim tensor of arm set.
+        context_set: A `num_contexts x d_c`-dim tensor of context set.
+
+    Returns:
+        An `n`-dim tensor of corresponding IKG values.
+    """
+    assert arm_set.dim() == 2 and context_set.dim() in [2, 3]
+    assert candidates.dim() == 3 and candidates.shape[-2] == 1
+    num_arms = arm_set.shape[0]
+    num_contexts = context_set.shape[-2]
+    if context_set.dim() == 2:
+        context_set = context_set.repeat(num_arms, 1, 1)
+    arm_context_pairs = torch.cat(
+        [
+            arm_set.view(-1, 1, 1).repeat(1, num_contexts, 1),
+            context_set,
+        ],
+        dim=-1,
+    )
+
+    # means is num_arms x num_contexts
+    means = model.posterior(arm_context_pairs).mean.squeeze(-1)
+
+    # this is num_candidates x (num_arms * num_contexts) x 1
+    full_sigma_tilde = _get_s_tilde(
+        model=model,
+        X=candidates,
+        x=arm_context_pairs.view(num_arms * num_contexts, -1),
+    )
+
+    ikg_vals = torch.zeros(candidates.shape[0]).to(candidates)
+    # loop over each candidate and calculate IKG value
+    for idx, all_s_tilde in enumerate(full_sigma_tilde):
+        ikg_val = torch.tensor(0).to(arm_set)
+        shaped_s_tilde = all_s_tilde.reshape(num_arms, num_contexts)
+        for c_idx in range(num_contexts):
+            ikg_val += _pearce_alg_1(means[:, c_idx], shaped_s_tilde[:, c_idx])
+        ikg_vals[idx] = ikg_val
+    return ikg_vals
+
+
 def finite_ikg_maximizer(
     model: LCEGP,
     arm_set: Tensor,
@@ -104,13 +158,15 @@ def finite_ikg_maximizer(
     Returns:
         A `1 x d`-dim tensor denoting the arm-context pair maximizing IKG.
     """
-    assert arm_set.dim() == context_set.dim() == 2
+    assert arm_set.dim() == context_set.dim() in [2, 3]
     num_arms = arm_set.shape[0]
-    num_contexts = context_set.shape[0]
+    num_contexts = context_set.shape[-2]
+    if context_set.dim() == 2:
+        context_set = context_set.repeat(num_arms, 1, 1)
     arm_context_pairs = torch.cat(
         [
             arm_set.view(-1, 1, 1).repeat(1, num_contexts, 1),
-            context_set.repeat(num_arms, 1, 1),
+            context_set,
         ],
         dim=-1,
     )
@@ -147,37 +203,114 @@ def finite_ikg_maximizer(
     return arm_context_pairs.view(-1, dim)[max_idx].view(-1, dim)
 
 
-def _get_modellist_s_tilde(model: ModelListGP, context_set: Tensor) -> Tensor:
+def _get_modellist_s_tilde(
+    model: ModelListGP, context_set: Tensor, candidates: Optional[Tensor] = None
+) -> Tensor:
     r"""
     Calculates the s_tilde for the ModelListGP.
 
     .. math::
         \tilde{\sigma}(x, X) = K(x, X) / \sqrt{ K(X, X) + \diag(\sigma^2(X)) }
 
-    For a single model, we want s_tilde for each context as being the fantasy point,
-    e.g, X, and calculate the s_tilde vector for each X for all x=context_set.
-    This corresponds to a num_contexts x num_contexts tensor for each arm / model.
-    So, this will result in a num_arms x num_contets x num_contexts elements.
+    If candidates is not specified:
+        For a single model, we want s_tilde for each context as being the fantasy point,
+        e.g, X, and calculate the s_tilde vector for each X for all x=context_set.
+        This corresponds to a num_contexts x num_contexts tensor for each arm / model.
+        So, this will result in a num_arms x num_contets x num_contexts elements.
+    If candidates is specified:
+        Candidates becomes X. However, this is not that straightforward. We need to
+        separate candidates into candidates for each arm, calculate the s_tilde for
+        each arm, and join them together. In this case, the return shape will be
+        num_candidates x num_contexts.
 
     Args:
         model: A ModelListGP with a model corresponding to each arm.
         context_set: A `num_contexts x d_c`-dim tensor of context set.
+        candidates: If specified, we process arms one by one, and calculate the
+            s_tilde corresponding to each candidate as discussed above.
 
     Returns:
-        A `num_arms x num_contexts x num_contexts`-dim tensor where each
-        res[arm, context] with give the s_tilde vector for that arm-context pair.
+        If candidates is None:
+            A `num_arms x num_contexts x num_contexts`-dim tensor where each
+            res[arm, context] with give the s_tilde vector for that arm-context pair.
+        Else:
+            A `num_candidates x num_contexts`-dim tensor where res[i] gives the
+            s_tilde vector for that candidate.
     """
-    full_post = model.posterior(context_set)
-    # covars is num_arms x num_contexts x num_contexts
-    covars = full_post.mvn.lazy_covariance_matrix.base_lazy_tensor.evaluate()
-    # noises is a num_arms tensor
-    noises = torch.stack([l.noise.squeeze() for l in model.likelihood.likelihoods])
-    diag_covars = torch.diagonal(covars, dim1=-2, dim2=-1)
-    noisy_diag = diag_covars + noises.unsqueeze(-1).expand_as(diag_covars)
-    noisy_diag_root = noisy_diag.sqrt()
-    expanded = noisy_diag_root.unsqueeze(-1).expand_as(covars)
-    return covars / expanded
+    if candidates is None:
+        assert context_set.dim() == 2
+        full_post = model.posterior(context_set)
+        # covars is num_arms x num_contexts x num_contexts
+        covars = full_post.mvn.lazy_covariance_matrix.base_lazy_tensor.evaluate()
+        # noises is a num_arms tensor
+        noises = torch.stack([l.noise.squeeze() for l in model.likelihood.likelihoods])
+        diag_covars = torch.diagonal(covars, dim1=-2, dim2=-1)
+        noisy_diag = diag_covars + noises.unsqueeze(-1).expand_as(diag_covars)
+        noisy_diag_root = noisy_diag.sqrt()
+        expanded = noisy_diag_root.unsqueeze(-1).expand_as(covars)
+        return covars / expanded
+    else:
+        assert candidates.dim() == 3 and candidates.shape[-2] == 1
+        q = candidates.shape[-2]
+        num_arms = len(model.models)
+        num_contexts = context_set.shape[-2]
+        if context_set.dim() == 2:
+            context_set = context_set.repeat(num_arms, 1, 1)
+        s_tilde = torch.zeros(candidates.shape[0], num_contexts).to(candidates)
+        for arm_idx, arm_model in enumerate(model.models):
+            mask = (candidates[..., 0] == arm_idx).view(-1)
+            X = candidates[mask][..., 1:]
+            x = context_set[arm_idx]
+            x_cat = torch.cat([x.expand(X.shape[:-2] + x.shape), X], dim=-2)
+            full_mvn = arm_model(x_cat)
+            full_covar = full_mvn.covariance_matrix
+            noise = arm_model.likelihood.noise.squeeze()
+            K_x_X = full_covar[..., :-1, -1:]
+            K_X_X = full_covar[..., -1:, -1:]
+            chol = torch.cholesky(K_X_X + torch.diag(noise.expand(q)).expand_as(K_X_X))
+            arm_s_tilde = K_x_X.matmul(chol.inverse())
+            s_tilde[mask] = arm_s_tilde.squeeze(-1)
+        return s_tilde
 
+
+def finite_ikg_eval_modellist(
+    candidates: Tensor,
+    model: ModelListGP,
+    context_set: Tensor,
+) -> Tensor:
+    r"""
+    Same idea as below. Returns the IKG value instead of the maximizer.
+    """
+    # allow for 3-dim context_sets
+    assert context_set.dim() in [2, 3]
+    num_arms = len(model.models)
+    num_contexts = context_set.shape[-2]
+
+    # means is num_arms x num_contexts
+    if context_set.dim() == 2:
+        means = model.posterior(context_set).mean.t()
+    else:
+        means = torch.zeros(num_arms, num_contexts).to(context_set)
+        for arm_idx, arm_model in enumerate(model.models):
+            arm_means = arm_model.posterior(context_set[arm_idx]).mean
+            means[arm_idx] = arm_means.view(num_contexts)
+
+    # this is (num_arms x num_contexts or num_candidates) x num_contexts
+    full_sigma_tilde = _get_modellist_s_tilde(model, context_set, candidates)
+    # reshaping to get candidates x num_contexts
+    full_sigma_tilde = full_sigma_tilde.view(-1, num_contexts)
+
+    ikg_vals = torch.zeros(candidates.shape[0]).to(context_set)
+    for idx, all_s_tilde in enumerate(full_sigma_tilde):
+        ikg_val = torch.tensor(0).to(context_set)
+        arm_idx = int(candidates[idx][..., 0])
+        # expanded s_tilde will be 0 except for the current candidate arm
+        expanded_s_tilde = torch.zeros(num_arms, num_contexts).to(context_set)
+        expanded_s_tilde[arm_idx] = all_s_tilde
+        for c_idx in range(num_contexts):
+            ikg_val += _pearce_alg_1(means[:, c_idx], expanded_s_tilde[:, c_idx])
+        ikg_vals[idx] = ikg_val
+    return ikg_vals
 
 def finite_ikg_maximizer_modellist(
     model: ModelListGP,
