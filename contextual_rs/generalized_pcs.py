@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, Callable
 
 import botorch
@@ -225,6 +226,13 @@ def estimate_lookahead_generalized_pcs_modellist(
     if base_samples is not None:
         if model_sampler:
             num_fantasies = model_sampler.sample_shape[0]
+            if base_samples.shape[1] != num_fantasies:
+                warnings.warn(
+                    "It is highly recommended to use a different set of base_samples"
+                    "for each fantasy model. Repeating the base samples across "
+                    "fantasies is very inefficient.",
+                    RuntimeWarning,
+                )
         else:
             num_fantasies = 1
         base_samples = base_samples.expand(
