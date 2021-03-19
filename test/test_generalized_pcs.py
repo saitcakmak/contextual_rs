@@ -1,5 +1,7 @@
+from itertools import product
+
 import torch
-from botorch.models import SingleTaskGP
+from botorch.models import SingleTaskGP, ModelListGP
 from botorch.sampling import SobolQMCNormalSampler
 from botorch import fit_gpytorch_model
 from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -7,6 +9,7 @@ from torch import Tensor
 
 from contextual_rs.generalized_pcs import (
     estimate_lookahead_generalized_pcs,
+    estimate_lookahead_generalized_pcs_modellist,
     estimate_current_generalized_pcs,
 )
 from contextual_rs.models.lce_gp import LCEGP
@@ -155,6 +158,86 @@ class TestGeneralizedPCS(BotorchTestCase):
             if not use_apx:
                 # check that the values are probabilities, i.e., between 0 and 1
                 self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
+
+    def test_lookahead_generalized_pcs_w_modellist(self):
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            num_arms = 3
+            num_contexts = 4
+            context_set = torch.rand(num_contexts, 2, **ckwargs)
+            func_I = lambda X: (X > 0).to(**ckwargs)
+            rho = lambda X: X.mean(dim=-2)
+            model = ModelListGP(
+                *[
+                    SingleTaskGP(
+                        torch.rand(10, 2, **ckwargs), torch.randn(10, 1, **ckwargs)
+                    )
+                    for _ in range(num_arms)
+                ]
+            )
+
+            num_fantasies = 2
+            model_sampler = SobolQMCNormalSampler(num_samples=num_fantasies)
+            num_candidates = 5
+            candidate = torch.cat(
+                [
+                    torch.randint(0, num_arms, (num_candidates, 1, 1)),
+                    torch.rand(num_candidates, 1, 2),
+                ],
+                dim=-1,
+            ).to(**ckwargs)
+
+            pcs = estimate_lookahead_generalized_pcs_modellist(
+                candidate=candidate,
+                model=model,
+                model_sampler=model_sampler,
+                context_set=context_set,
+                num_samples=10,
+                base_samples=None,
+                func_I=func_I,
+                rho=rho,
+                use_approximation=False,
+            )
+            # check output shape
+            self.assertEqual(pcs.shape, torch.Size([num_candidates]))
+            # check that the values are probabilities, i.e., between 0 and 1
+            self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
+
+            # certainty equivalent approximation
+            pcs = estimate_lookahead_generalized_pcs_modellist(
+                candidate=candidate,
+                model=model,
+                model_sampler=None,
+                context_set=context_set,
+                num_samples=10,
+                base_samples=None,
+                func_I=func_I,
+                rho=rho,
+                use_approximation=False,
+            )
+            # check output shape
+            self.assertEqual(pcs.shape, torch.Size([num_candidates]))
+            # check that the values are probabilities, i.e., between 0 and 1
+            self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
+
+            # test with base samples
+            base_samples = torch.randn(10, 1, 1, num_contexts, num_arms, **ckwargs)
+            # certainty equivalent approximation
+            pcs = estimate_lookahead_generalized_pcs_modellist(
+                candidate=candidate,
+                model=model,
+                model_sampler=model_sampler,
+                context_set=context_set,
+                num_samples=10,
+                base_samples=base_samples,
+                func_I=func_I,
+                rho=rho,
+                use_approximation=False,
+            )
+            # check output shape
+            self.assertEqual(pcs.shape, torch.Size([num_candidates]))
+            # check that the values are probabilities, i.e., between 0 and 1
+            self.assertTrue(torch.equal(pcs, pcs.clamp(min=0, max=1)))
 
     def test_estimate_current_generalized_pcs(self):
         def sine_test(X: Tensor) -> Tensor:

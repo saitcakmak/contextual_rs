@@ -86,9 +86,10 @@ def estimate_lookahead_generalized_pcs(
     # input data verification
     assert arm_set.dim() == 2 and context_set.dim() in [2, 3]
     assert arm_set.shape[-1] + context_set.shape[-1] == candidate.shape[-1]
-    if candidate.dim() < 3:
-        candidate = candidate.unsqueeze(0)
     assert candidate.dim() == 3
+
+    if isinstance(model, ModelListGP):
+        raise NotImplementedError("Use ModelListGP specific version instead!")
 
     # define for future reference
     full_dim = candidate.shape[-1]
@@ -120,10 +121,6 @@ def estimate_lookahead_generalized_pcs(
     ).reshape(num_arms * num_contexts, full_dim)
 
     if use_approximation:
-        if isinstance(model, ModelListGP):
-            # TODO: this would require reshaping the posterior a bit to get right.
-            #   Let's make it work with normal models first
-            raise NotImplementedError
         # this posterior is num_context x fm.batch_shape over num_arms alternatives
         # fm.batch_shape = num_fantasies x num_candidates
         posterior = fantasy_model.posterior(
@@ -202,6 +199,114 @@ def estimate_lookahead_generalized_pcs(
     return pcs_est.squeeze(-1)
 
 
+def estimate_lookahead_generalized_pcs_modellist(
+    candidate: Tensor,
+    model: ModelListGP,
+    model_sampler: Optional[MCSampler],
+    context_set: Tensor,
+    num_samples: int,
+    base_samples: Optional[Tensor],
+    func_I: Callable[[Tensor], Tensor],
+    rho: Callable[[Tensor], Tensor],
+    use_approximation: bool = False,
+) -> Tensor:
+    r"""
+    Modified to work with ModelListGP.
+    """
+    # input data verification
+    assert context_set.dim() == 2
+    assert context_set.shape[-1] + 1 == candidate.shape[-1]
+    assert candidate.dim() == 3 and candidate.shape[-2] == 1
+    assert isinstance(model, ModelListGP)
+    if use_approximation:
+        raise NotImplementedError
+    num_arms = len(model.models)
+    num_contexts = context_set.shape[0]
+    if base_samples is not None:
+        if model_sampler:
+            num_fantasies = model_sampler.sample_shape[0]
+        else:
+            num_fantasies = 1
+        base_samples = base_samples.expand(
+            num_samples,
+            num_fantasies,
+            candidate.shape[0],
+            num_contexts,
+            num_arms,
+        )
+    # We will handle the fantasies by first sorting the candidates over arms,
+    #   calculating the pcs values, then sorting them back.
+    #   To calculate the PCS values, we will essentially loop over arms, only
+    #   processing the corresponding candidates at any given time.
+    sort_idcs = candidate[..., 0].view(-1).argsort()
+    sorted_candidates = candidate[sort_idcs]
+    pcs_est = torch.zeros(candidate.shape[0]).to(candidate)
+    for arm_idx, arm_model in enumerate(model.models):
+        mask = sorted_candidates[..., 0].view(-1) == arm_idx
+        if mask.sum() == 0:
+            continue
+        arm_candidates = sorted_candidates[mask][..., 1:]
+        remaining_arm_idx = list(range(num_arms))
+        remaining_arm_idx.pop(arm_idx)
+        # generate the fantasy model
+        if model_sampler is not None:
+            fantasy_model = arm_model.fantasize(arm_candidates, model_sampler)
+        else:
+            # certainty equivalent approximation
+            Y = arm_model.posterior(arm_candidates).mean.unsqueeze(0)
+            fantasy_model = arm_model.condition_on_observations(arm_candidates, Y)
+
+        # generate the posterior and draw posterior samples
+        with botorch.settings.propagate_grads(True):
+            fm_posterior = fantasy_model.posterior(context_set)
+            rem_posterior = model.posterior(
+                X=context_set, output_indices=remaining_arm_idx
+            )
+        fm_means = fm_posterior.mean
+        rem_means = rem_posterior.mean.expand(*fm_means.shape[:-2], -1, -1)
+        # means is num_fantasies x n x num_contexts x num_arms
+        means = torch.cat(
+            [rem_means[..., :arm_idx], fm_means, rem_means[..., arm_idx:]], dim=-1
+        )
+        # pick the base samples corresponding to this arm
+        if base_samples is not None:
+            arm_base_samples = base_samples[:, :, mask]
+            fm_base_samples = arm_base_samples[..., arm_idx : arm_idx + 1]
+            rem_base_samples = arm_base_samples[..., remaining_arm_idx]
+        else:
+            fm_base_samples = None
+            rem_base_samples = None
+        fm_samples = fm_posterior.rsample(
+            sample_shape=torch.Size([num_samples]),
+            base_samples=fm_base_samples,
+        )
+        rem_samples = rem_posterior.rsample(
+            sample_shape=torch.Size(fm_samples.shape[:-2]),
+            base_samples=rem_base_samples,
+        )
+        # y_samples is num_samples x num_fantasies x n x num_contexts x num_arms
+        y_samples = torch.cat(
+            [rem_samples[..., :arm_idx], fm_samples, rem_samples[..., arm_idx:]], dim=-1
+        )
+        # order means across arms and apply the same ordering to y_samples
+        means, indices = means.sort(dim=-1, descending=True)
+        y_samples = y_samples.gather(dim=-1, index=indices.expand_as(y_samples))
+        # calculate deltas
+        max_rest, _ = y_samples[..., 1:].max(dim=-1)
+        deltas = y_samples[..., 0] - max_rest
+        # get samples of PCS(c)
+        I_vals = func_I(deltas)
+        # average samples to get the estimate of PCS(c)
+        pcs_c_est = I_vals.mean(dim=0)
+        # convert to estimates of rho PCS
+        rho_vals = rho(pcs_c_est.unsqueeze(-1))
+        # average over fantasies to get the final estimate
+        pcs_est[mask] = rho_vals.mean(dim=0).squeeze(-1)
+    # unsort to get the pcs_est with the original candidate ordering.
+    pcs_est = pcs_est.gather(dim=-1, index=sort_idcs.argsort())
+    return pcs_est.squeeze(-1)
+
+
 def estimate_current_generalized_pcs(
     model: Model,
     arm_set: Tensor,
@@ -245,6 +350,8 @@ def estimate_current_generalized_pcs(
     """
     # input data verification
     assert arm_set.dim() == 2 and context_set.dim() in [2, 3]
+    if context_set.dim() == 3 and isinstance(model, ModelListGP):
+        raise NotImplementedError
 
     # define for future reference
     full_dim = arm_set.shape[-1] + context_set.shape[-1]
@@ -322,8 +429,10 @@ def estimate_current_generalized_pcs(
         pcs_c_est = min_dist.unsqueeze(-1)
     else:
         # generate the posterior and draw posterior samples
+        # means is num_arms x num_contexts
         if isinstance(model, ModelListGP):
-            posterior = model.posterior(context_set)
+            # TODO: only works thanks to not-implemented above
+            posterior = model.posterior(context_set[0])
             means = posterior.mean.t()
         else:
             posterior = model.posterior(arm_context_pairs)
