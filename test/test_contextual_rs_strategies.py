@@ -1,11 +1,13 @@
 from itertools import product
 
 import torch
+from botorch.models import ModelListGP, SingleTaskGP
 
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
 from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
+    gao_modellist,
 )
 
 from test.utils import BotorchTestCase
@@ -53,3 +55,30 @@ class TestContextualRSStrategies(BotorchTestCase):
 
     def test_gao_sampling_strategy(self):
         self.test_sampling_strategy(gao_sampling_strategy)
+
+    def test_gao_modellist(self):
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            num_arms = 3
+            num_contexts = 4
+            context_set = torch.rand(num_contexts, 2, **ckwargs)
+
+            model = ModelListGP(
+                *[
+                    SingleTaskGP(
+                        context_set[
+                            torch.randint(0, num_contexts, (10,), device=device)
+                        ],
+                        torch.randn(10, 1, **ckwargs),
+                    )
+                    for _ in range(num_arms)
+                ]
+            )
+
+            next_arm, next_context = gao_modellist(
+                model=model,
+                context_set=context_set,
+                randomize_ties=True,
+            )
+            self.assertTrue(next_arm < num_arms)
+            self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
