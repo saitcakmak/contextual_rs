@@ -7,7 +7,7 @@ with some minor differences in the quantities. Frazier aims to find the
 maximizer of the KG only, whereas Pearce aims to find the KG value.
 It is the algorithm 1 but also includes a bit that is presented in alg 2.
 """
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Callable
 
 import torch
 from botorch.models import ModelListGP, SingleTaskGP
@@ -317,6 +317,7 @@ def finite_ikg_maximizer_modellist(
     model: ModelListGP,
     context_set: Tensor,
     randomize_ties: bool = True,
+    rho: Optional[Callable] = None,
 ) -> Tuple[int, int]:
     r"""
     Modified to work with MLGP
@@ -326,6 +327,10 @@ def finite_ikg_maximizer_modellist(
         context_set: A `num_contexts x d_c`-dim tensor of context set.
         randomize_ties: If True and there are multiple maximizers,
             the result will be randomly selected.
+        rho: This is an experimental feature. Replaces the integration over
+            KG(c) with rho(KG(c)). rho operates on the -2 dimension, so
+            kg_vals need to be unsqueezed before calling rho.
+            This works pretty bad - not recommended.
 
     Returns:
         A tuple of arm and context indices corresponding to the maximizer.
@@ -350,12 +355,16 @@ def finite_ikg_maximizer_modellist(
     #   There's a loop over contexts in there. That takes s_tilde for each
     #   arm for a given context. We will pass all zeros and a single non-zero there.
     for idx, all_s_tilde in enumerate(full_sigma_tilde):
-        ikg_val = torch.tensor(0).to(context_set)
+        kg_vals = torch.zeros(num_contexts).to(context_set)
         # expanded s_tilde will be 0 except for the current candidate arm
         expanded_s_tilde = torch.zeros(num_arms, num_contexts).to(context_set)
         expanded_s_tilde[idx // num_contexts] = all_s_tilde
         for c_idx in range(num_contexts):
-            ikg_val += _pearce_alg_1(means[:, c_idx], expanded_s_tilde[:, c_idx])
+            kg_vals[c_idx] = _pearce_alg_1(means[:, c_idx], expanded_s_tilde[:, c_idx])
+        if rho is None:
+            ikg_val = kg_vals.sum()
+        else:
+            ikg_val = rho(kg_vals.unsqueeze(-1)).squeeze(-1)
         if ikg_val > max_ikg_val:
             max_ikg_val = ikg_val
             max_idx = [idx]
