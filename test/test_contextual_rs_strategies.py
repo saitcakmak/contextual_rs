@@ -8,7 +8,9 @@ from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
     gao_modellist,
+    gao_lcegp,
 )
+from contextual_rs.models.lce_gp import LCEGP
 
 from test.utils import BotorchTestCase
 
@@ -77,6 +79,33 @@ class TestContextualRSStrategies(BotorchTestCase):
 
             next_arm, next_context = gao_modellist(
                 model=model,
+                context_set=context_set,
+                randomize_ties=True,
+            )
+            self.assertTrue(next_arm < num_arms)
+            self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
+
+    def test_gao_lcegp(self):
+        for dtype, device in product(self.dtype_list, self.device_list):
+            ckwargs = {"dtype": dtype, "device": device}
+            num_arms = 3
+            num_contexts = 4
+            arm_set = torch.arange(0, num_arms, **ckwargs).view(-1, 1)
+            context_set = torch.rand(num_contexts, 2, **ckwargs)
+
+            train_X = torch.cat(
+                [
+                    arm_set.view(-1, 1, 1).repeat(1, num_contexts, 1),
+                    context_set.repeat(num_arms, 1, 1),
+                ], dim=-1
+            ).view(-1, 3).repeat(2, 1)
+            train_Y = torch.randn(num_arms * num_contexts * 2, 1, **ckwargs)
+
+            model = LCEGP(train_X, train_Y, [0])
+
+            next_arm, next_context = gao_lcegp(
+                model=model,
+                arm_set=arm_set,
                 context_set=context_set,
                 randomize_ties=True,
             )

@@ -200,7 +200,8 @@ class TestLCEGP(BotorchTestCase):
             with self.assertRaises(ValueError):
                 model.forward(test_x)
 
-            test_x[:, -3:] = 0
+            test_x[0, -3:] = 0
+            test_x[1, -3:] = 1
             prior = model.forward(test_x)
             self.assertEqual(prior.mean.shape, torch.Size([num_test]))
             self.assertEqual(

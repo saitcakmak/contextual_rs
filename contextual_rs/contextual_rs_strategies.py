@@ -5,6 +5,7 @@ from botorch.models import ModelListGP
 from torch import Tensor
 
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
+from contextual_rs.models.lce_gp import LCEGP
 
 
 def li_sampling_strategy(
@@ -148,6 +149,81 @@ def gao_modellist(
     for i, arm_inputs in enumerate(train_inputs):
         arm_inputs = arm_inputs[0]
         train_counts[i] = (arm_inputs == next_context).all(dim=-1).sum()
+    y_vals = train_counts / variances[min_context]
+    sorted_y_vals = y_vals[idcs[min_context]]
+    y_s_1 = sorted_y_vals[0]
+    y_s_2 = sorted_y_vals[1:].sum()
+    # check for condition (16) and pick arm accordingly
+    # + 1 accounts for the 0th index which disappears when calculating hat Z
+    next_sorted_arm = 0 if y_s_1 < y_s_2 else min_sorted_arm + 1
+    # map the sorted_arm to original index
+    next_arm = idcs[min_context, next_sorted_arm]
+    return next_arm, next_context
+
+
+def gao_lcegp(
+    model: LCEGP,
+    arm_set: Tensor,
+    context_set: Tensor,
+    randomize_ties: bool = True,
+) -> Tuple[int, Tensor]:
+    r"""
+    Gao sampling strategy adapted to work with LCEGP by replacing
+    vars / p with posterior variance.
+
+    Note: This should not be used in the continuous context setting!
+
+    Args:
+        model: An LCEGP modeling the arm-context pairs.
+        arm_set: The set of arms to consider, `num_arms x 1`.
+        context_set: The set of contexts to consider. `num_contexts x d_c`.
+        randomize_ties: If there are multiple maximizers of Z, pick the
+            returned one randomly.
+
+    Returns:
+        The maximizer arm and the corresponding context.
+    """
+    # calculate the hat Z values.
+    num_arms = arm_set.shape[0]
+    num_contexts = context_set.shape[0]
+    arm_context_pairs = torch.cat(
+        [
+            arm_set.repeat( num_contexts, 1, 1),
+            context_set.view(num_contexts, 1, -1).repeat(1, num_arms, 1)
+        ], dim=-1
+    )
+    posterior = model.posterior(arm_context_pairs)
+    # These are num_contexts x num_arms
+    means = posterior.mean.squeeze(-1)
+    variances = posterior.variance.squeeze(-1)
+    sorted_means, idcs = means.sort(dim=-1, descending=True)
+    sorted_vars = variances.gather(dim=-1, index=idcs)
+    # TODO: could consider using the variance of difference here instead
+    added_vars = sorted_vars[:, :1].expand(-1, num_arms - 1) + sorted_vars[:, 1:]
+    mean_diffs = sorted_means[:, :1].expand(-1, num_arms - 1) - sorted_means[:, 1:]
+    squared_diffs = mean_diffs.pow(2)
+    hat_Z = squared_diffs / added_vars
+    # part 2 a)
+    flat_Z = hat_Z.view(-1)
+    min_Z, minimizer = torch.min(flat_Z, dim=0)
+    if randomize_ties:
+        min_check = flat_Z == min_Z
+        min_count = min_check.sum()
+        min_idcs = torch.arange(
+            0, flat_Z.shape[0], device=hat_Z.device
+        )[min_check]
+        minimizer = min_idcs[
+            torch.randint(min_count, (1,), device=hat_Z.device)
+        ].squeeze()
+    min_context = minimizer // (num_arms - 1)
+    next_context = context_set[min_context]
+    min_sorted_arm = minimizer % (num_arms - 1)
+    # part 2 b) - train_counts stands in for the p_values
+    train_inputs = model.train_inputs[0]
+    train_counts = torch.zeros(num_arms).to(context_set)
+    for arm in arm_set:
+        current_pair = torch.cat([arm, next_context], dim=-1)
+        train_counts[int(arm)] = (train_inputs == current_pair).all(dim=-1).sum()
     y_vals = train_counts / variances[min_context]
     sorted_y_vals = y_vals[idcs[min_context]]
     y_s_1 = sorted_y_vals[0]
