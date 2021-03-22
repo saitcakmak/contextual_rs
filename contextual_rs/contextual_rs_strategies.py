@@ -100,6 +100,7 @@ def gao_modellist(
     model: ModelListGP,
     context_set: Tensor,
     randomize_ties: bool = True,
+    infer_p: bool = False,
 ) -> Tuple[int, Tensor]:
     r"""
     Gao sampling strategy adapted to work with ModelListGP by replacing
@@ -112,6 +113,9 @@ def gao_modellist(
         context_set: The set of contexts to consider. `num_contexts x d_c`.
         randomize_ties: If there are multiple maximizers of Z, pick the
             returned one randomly.
+        infer_p: This is an experimental feature. If True, the ratio of samples
+            allocated to a given alternative `p` is inferred from the ratio of
+            the prior and posterior variances.
 
     Returns:
         The maximizer arm and the corresponding context.
@@ -144,12 +148,21 @@ def gao_modellist(
     next_context = context_set[min_context]
     min_sorted_arm = minimizer % (num_arms - 1)
     # part 2 b) - train_counts stands in for the p_values
-    train_inputs = model.train_inputs
-    train_counts = torch.zeros(num_arms).to(context_set)
-    for i, arm_inputs in enumerate(train_inputs):
-        arm_inputs = arm_inputs[0]
-        train_counts[i] = (arm_inputs == next_context).all(dim=-1).sum()
-    y_vals = train_counts / variances[min_context]
+    if infer_p:
+        # we just need the ratio for the next context
+        prior_variances = [
+            m.forward(context_set[min_context].view(1, -1)).variance
+            for m in model.models
+        ]
+        ratio = torch.cat(prior_variances) / variances[min_context]
+        y_vals = ratio / variances[min_context]
+    else:
+        train_inputs = model.train_inputs
+        train_counts = torch.zeros(num_arms).to(context_set)
+        for i, arm_inputs in enumerate(train_inputs):
+            arm_inputs = arm_inputs[0]
+            train_counts[i] = (arm_inputs == next_context).all(dim=-1).sum()
+        y_vals = train_counts / variances[min_context]
     sorted_y_vals = y_vals[idcs[min_context]]
     y_s_1 = sorted_y_vals[0]
     y_s_2 = sorted_y_vals[1:].sum()
@@ -166,6 +179,7 @@ def gao_lcegp(
     arm_set: Tensor,
     context_set: Tensor,
     randomize_ties: bool = True,
+    infer_p: bool = False,
 ) -> Tuple[int, Tensor]:
     r"""
     Gao sampling strategy adapted to work with LCEGP by replacing
@@ -179,6 +193,9 @@ def gao_lcegp(
         context_set: The set of contexts to consider. `num_contexts x d_c`.
         randomize_ties: If there are multiple maximizers of Z, pick the
             returned one randomly.
+        infer_p: This is an experimental feature. If True, the ratio of samples
+            allocated to a given alternative `p` is inferred from the ratio of
+            the prior and posterior variances.
 
     Returns:
         The maximizer arm and the corresponding context.
@@ -188,7 +205,7 @@ def gao_lcegp(
     num_contexts = context_set.shape[0]
     arm_context_pairs = torch.cat(
         [
-            arm_set.repeat( num_contexts, 1, 1),
+            arm_set.repeat(num_contexts, 1, 1),
             context_set.view(num_contexts, 1, -1).repeat(1, num_arms, 1)
         ], dim=-1
     )
@@ -219,12 +236,18 @@ def gao_lcegp(
     next_context = context_set[min_context]
     min_sorted_arm = minimizer % (num_arms - 1)
     # part 2 b) - train_counts stands in for the p_values
-    train_inputs = model.train_inputs[0]
-    train_counts = torch.zeros(num_arms).to(context_set)
-    for arm in arm_set:
-        current_pair = torch.cat([arm, next_context], dim=-1)
-        train_counts[int(arm)] = (train_inputs == current_pair).all(dim=-1).sum()
-    y_vals = train_counts / variances[min_context]
+    if infer_p:
+        # we just need the ratio for the next context
+        prior_variances = model.forward(arm_context_pairs[min_context]).variance.squeeze(-1)
+        ratio = prior_variances / variances[min_context]
+        y_vals = ratio / variances[min_context]
+    else:
+        train_inputs = model.train_inputs[0]
+        train_counts = torch.zeros(num_arms).to(context_set)
+        for arm in arm_set:
+            current_pair = torch.cat([arm, next_context], dim=-1)
+            train_counts[int(arm)] = (train_inputs == current_pair).all(dim=-1).sum()
+        y_vals = train_counts / variances[min_context]
     sorted_y_vals = y_vals[idcs[min_context]]
     y_s_1 = sorted_y_vals[0]
     y_s_2 = sorted_y_vals[1:].sum()

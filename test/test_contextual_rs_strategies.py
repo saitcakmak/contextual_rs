@@ -85,6 +85,15 @@ class TestContextualRSStrategies(BotorchTestCase):
             self.assertTrue(next_arm < num_arms)
             self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
 
+            next_arm, next_context = gao_modellist(
+                model=model,
+                context_set=context_set,
+                randomize_ties=True,
+                infer_p=True,
+            )
+            self.assertTrue(next_arm < num_arms)
+            self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
+
     def test_gao_lcegp(self):
         for dtype, device in product(self.dtype_list, self.device_list):
             ckwargs = {"dtype": dtype, "device": device}
@@ -108,6 +117,16 @@ class TestContextualRSStrategies(BotorchTestCase):
                 arm_set=arm_set,
                 context_set=context_set,
                 randomize_ties=True,
+            )
+            self.assertTrue(next_arm < num_arms)
+            self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
+
+            next_arm, next_context = gao_lcegp(
+                model=model,
+                arm_set=arm_set,
+                context_set=context_set,
+                randomize_ties=True,
+                infer_p=True,
             )
             self.assertTrue(next_arm < num_arms)
             self.assertTrue((next_context == context_set).all(dim=-1).sum() == 1)
