@@ -316,6 +316,7 @@ def finite_ikg_eval_modellist(
 def finite_ikg_maximizer_modellist(
     model: ModelListGP,
     context_set: Tensor,
+    weights: Optional[Tensor] = None,
     randomize_ties: bool = True,
     rho: Optional[Callable] = None,
 ) -> Tuple[int, int]:
@@ -325,6 +326,8 @@ def finite_ikg_maximizer_modellist(
     Args:
         model: A ModelListGP with a model corresponding to each arm.
         context_set: A `num_contexts x d_c`-dim tensor of context set.
+        weights: An optional `num_contexts`-dim tensor to be used when summing
+            up the KG values for each context. This is ignored if `rho` is specified.
         randomize_ties: If True and there are multiple maximizers,
             the result will be randomly selected.
         rho: This is an experimental feature. Replaces the integration over
@@ -362,6 +365,8 @@ def finite_ikg_maximizer_modellist(
         for c_idx in range(num_contexts):
             kg_vals[c_idx] = _pearce_alg_1(means[:, c_idx], expanded_s_tilde[:, c_idx])
         if rho is None:
+            if weights is not None:
+                kg_vals = kg_vals * weights
             ikg_val = kg_vals.sum()
         else:
             ikg_val = rho(kg_vals.unsqueeze(-1)).squeeze(-1)
