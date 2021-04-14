@@ -115,7 +115,7 @@ def gao_modellist(
             returned one randomly.
         infer_p: This is an experimental feature. If True, the ratio of samples
             allocated to a given alternative `p` is inferred from the ratio of
-            the prior and posterior variances.
+            the prior and posterior variances. Doesn't work well!
 
     Returns:
         The maximizer arm and the corresponding context.
@@ -138,12 +138,13 @@ def gao_modellist(
     if randomize_ties:
         min_check = flat_Z == min_Z
         min_count = min_check.sum()
-        min_idcs = torch.arange(
-            0, flat_Z.shape[0], device=hat_Z.device
-        )[min_check]
-        minimizer = min_idcs[
-            torch.randint(min_count, (1,), device=hat_Z.device)
-        ].squeeze()
+        if min_count > 1:
+            min_idcs = torch.arange(
+                0, flat_Z.shape[0], device=hat_Z.device
+            )[min_check]
+            minimizer = min_idcs[
+                torch.randint(min_count, (1,), device=hat_Z.device)
+            ].squeeze()
     min_context = minimizer // (num_arms - 1)
     next_context = context_set[min_context]
     min_sorted_arm = minimizer % (num_arms - 1)
