@@ -1,0 +1,10 @@
+{
+    "iterations": 2000,
+    "fit_frequency": 10,
+    "num_arms": 20,
+    "num_contexts": 40,
+    "context_dim": 7,
+    "use_full_train": 0,
+    "rho_key": "mean",
+    "ground_truth_kwargs": {"function": "cosine8"}
+}

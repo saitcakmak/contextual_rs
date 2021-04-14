@@ -1,0 +1,9 @@
+{
+    "iterations": 2000,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_contexts": 20,
+    "use_full_train": 1,
+    "rho_key": "worst",
+    "ground_truth_kwargs": {"function": "greiwank"}
+}

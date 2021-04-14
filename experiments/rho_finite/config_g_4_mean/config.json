@@ -1,0 +1,9 @@
+{
+    "iterations": 400,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_contexts": 20,
+    "num_fantasies": 0,
+    "rho_key": "mean",
+    "ground_truth_kwargs": {"function": "greiwank"}
+}

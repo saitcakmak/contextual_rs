@@ -1,0 +1,10 @@
+{
+    "iterations": 1000,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_contexts": 10,
+    "context_dim": 3,
+    "use_full_train": 0,
+    "rho_key": "worst",
+    "ground_truth_kwargs": {"function": "powell"}
+}

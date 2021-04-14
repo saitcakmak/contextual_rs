@@ -1,0 +1,9 @@
+{
+    "iterations": 400,
+    "fit_frequency": 10,
+    "num_arms": 20,
+    "num_contexts": 20,
+    "context_dim": 2,
+    "rho_key": "mean",
+    "ground_truth_kwargs": {"function": "hartmann"}
+}

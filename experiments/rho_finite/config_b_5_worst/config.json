@@ -1,0 +1,9 @@
+{
+    "iterations": 200,
+    "fit_frequency": 10,
+    "num_arms": 20,
+    "num_contexts": 40,
+    "num_fantasies": 0,
+    "rho_key": "worst",
+    "ground_truth_kwargs": {"function": "branin"}
+}

@@ -1,0 +1,10 @@
+{
+    "iterations": 2000,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_contexts": 10,
+    "use_full_train": 1,
+    "weights": [0.03, 0.07, 0.2, 0.1, 0.15, 0.2, 0.02, 0.08, 0.1, 0.05],
+    "rho_key": "mean",
+    "ground_truth_kwargs": {"function": "branin"}
+}

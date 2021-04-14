@@ -1,0 +1,11 @@
+{
+    "iterations": 400,
+    "fit_frequency": 25,
+    "fit_tries": 10,
+    "num_arms": 10,
+    "num_contexts": 20,
+    "context_dim": 5,
+    "num_fantasies": 0,
+    "ground_truth_kwargs": {"function": "hartmann"},
+    "batch_size": 5
+}

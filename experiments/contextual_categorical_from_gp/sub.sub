@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -J exp_%j                        # Job name
+#SBATCH -o /home/gid-cakmaks/BoRisk/logs/exp_%j.out    # Name of stdout output file(%j expands to jobId)
+#SBATCH -e /home/gid-cakmaks/BoRisk/logs/exp_%j.err    # Name of stderr output file(%j expands to jobId)
+#SBATCH --nodes=1                                   # Total number of nodes requested
+#SBATCH --ntasks=1                                  # Total number of tasks to be configured for
+#SBATCH --tasks-per-node=1                          # Sets number of tasks to run on each node
+#SBATCH --cpus-per-task=8                           # Number of cpus needed by each task (if task is "make -j3" number should be 3)
+#SBATCH --gres=gpu:1
+#SBATCH --get-user-env                              # Tells sbatch to retrieve the users login environment
+#SBATCH -t 4:00:00                                 # Time limit (hh:mm:ss)
+#SBATCH --mem=16000M                                # Memory required per node
+#SBATCH --partition=default_gpu                       # Which partition/queue it should run on
+/home/gid-cakmaks/anaconda3/envs/contextual_rs/bin/python /home/gid-cakmaks/contextual_rs/experiments/contextual_categorical_from_gp/main.py $1 $2 $3 $4
+
+# mpi-cpus
+# default_gpu
+# to specify gres=gpu:2080ti:1
+# --gres=gpu:1
