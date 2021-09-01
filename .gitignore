@@ -90,3 +90,4 @@ offline_test/
 
 # experiment output
 *.pt
+/experiments/old/

@@ -1,5 +1,11 @@
 """
-Comparing the lookahead PCS with MLGP with IKG and Li and Gao.
+Comparing the GP-C-OCBA with IKG and DSCO and C-OCBA.
+
+This refers to the algorithms with different names.
+GP-C-OCBA is referred to as ML_Gao;
+IKG is referred to as ML_IKG;
+DSCO is referred to as Li;
+C-OCBA is referred to as Gao.
 """
 import json
 import sys
@@ -32,23 +38,37 @@ from contextual_rs.models.contextual_independent_model import ContextualIndepend
 
 
 class GroundTruthModel:
+    """A class representing the true reward function."""
+
     def __init__(
         self,
         num_arms: int,
         context_map: Tensor,
+        function: str,
         init_scale: float = 50.0,
         observation_noise: float = 3.0,
-        function: Optional[str] = None,
         **ckwargs,
-    ):
-        r"""
-        If function is specified, the GP model is replaced with that function,
-        where the first dimension is used for the arms, and the remaining dimensions
-        are used for contexts. The function should be defined over d_c + 1 dimensions.
-        Arm indices are randomly mapped to the underlying space to avoid giving
-        SingleTaskGP an advantage.
-        In this case, the `num_init_samples` argument is ignored. The `init_scale`
-        argument is used to approximately scale the function values to match the scale.
+    ) -> None:
+        r"""Create the ground truth model from the given function.
+        The first input dimension of the function is used for the arms, i.e.,
+        a specific value of `x_0` corresponds to an arm, and the remaining dimensions
+        are used for the contexts, which are filled from `context_map`.
+
+        Args:
+            num_arms: Number of arms to use.
+            context_map: A tensor denoting the locations of the contexts in the
+                function input space. This should be `num_contexts x (function.dim - 1)`
+                dimensional.
+            function: The name of the base test function.
+            init_scale: Used to scale the observation noise level. The scaled
+                observation noise has a standard deviation of
+                `2 * init_scale * (f_max - f_min) / observation_noise` where `f_max`
+                and `f_min` are calculated as `scale_y.max/min` below.
+                In implementation, we actually scale the function values and add
+                noise with standard deviation `observation_noise` but these are
+                equivalent for all practical purposes. (relics from an earlier version)
+            observation_noise: See `init_scale`.
+            ckwargs: Common tensor arguments, dtype and device.
         """
         self.num_arms = num_arms
         self.context_map = context_map
@@ -78,26 +98,21 @@ class GroundTruthModel:
             )
             scale_y = self.function(scale_x)
             self.func_scale = init_scale * 2 / (scale_y.max() - scale_y.min())
-            self.model = None
         self.observation_noise = observation_noise
 
     def evaluate_true(self, arm_idx: Union[List, int], context: Tensor) -> Tensor:
         r"""
-        Evaluate the posterior mean at the given arm and context.
-        If using true_function, this evaluates that function.
-        If arm is int, context should be `1 x d` tensor.
-        If arm is a list of size n, context should be `n x d` tensor.
-        Returns a `n x 1`-dim tensor.
+        Evaluate the true reward at the given arm and context.
+        If arm is int, context should be a `1 x d` tensor.
+        If arm is a list of size n, context should be an `n x d` tensor.
+        Returns an `n x 1`-dim tensor.
         """
         arms = self.arm_map[arm_idx].view(-1, 1)
         X = torch.cat([arms, context], dim=-1)
-        if self.model:
-            return self.model.posterior(X).mean.view(-1, 1).detach()
-        else:
-            return (
-                self.function(unnormalize(X, self.function.bounds)).view(-1, 1)
-                * self.func_scale
-            )
+        return (
+            self.function(unnormalize(X, self.function.bounds)).view(-1, 1)
+            * self.func_scale
+        )
 
     def evaluate(self, arm_idx: Union[List, int], context: Tensor) -> Tensor:
         true_evals = self.evaluate_true(arm_idx, context)
@@ -120,20 +135,29 @@ class GroundTruthModel:
             ],
             dim=-1,
         ).view(-1, self.dim)
-        if self.model:
-            return self.model.posterior(X).mean.view(-1, 1).detach()
-        else:
-            return (
-                self.function(unnormalize(X, self.function.bounds)).view(-1, 1)
-                * self.func_scale
-            )
+        return (
+            self.function(unnormalize(X, self.function.bounds)).view(-1, 1)
+            * self.func_scale
+        )
 
     def evaluate_all(self):
         true_evals = self.evaluate_all_true()
         return true_evals + torch.randn_like(true_evals) * self.observation_noise
 
 
-def fit_modellist(X, Y, num_arms):
+def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
+    r"""
+    Fit a ModelListGP with a SingleTaskGP model for each arm.
+
+    Args:
+        X: A tensor representing all arm-context pairs that have been evaluated.
+            First column represents the arm.
+        Y: A tensor representing the corresponding evaluations.
+        num_arms: An integer denoting the number of arms.
+
+    Returns:
+        A fitted ModelListGP.
+    """
     mask_list = [X[..., 0] == i for i in range(num_arms)]
     model = ModelListGP(
         *[
@@ -151,6 +175,7 @@ def fit_modellist(X, Y, num_arms):
     return model
 
 
+# These are the allowed algorithm names. See top of the file for what these are.
 labels = [
     "ML_IKG",
     "ML_Gao",
@@ -181,10 +206,50 @@ def main(
     dtype: torch.dtype = torch.double,
     device: str = "cpu",
 ) -> dict:
+    r"""
+    Run a single replication of the experiment with the specified algorithm.
+    This is typically used with a config file and the helpers found at the bottom
+    to run a set of experiments on a cluster / server.
+
+    Args:
+        iterations: Number of iterations to run the experiment for.
+        seed: The seed to use for this replication.
+        label: This is the algorithm label, select from the list above.
+        use_full_train: If True, we evaluate all arm context pairs for initialization.
+        output_path: The file path for saving the experiment output.
+        rho_key: "mean" or "worst". Specifies the contextual PCS to use.
+        num_pcs_samples: Number of posterior samples used to estimate the current
+            contextual PCS. This is just an estimate, not the actual reported PCS.
+        num_arms: Number of arms to use.
+        num_contexts: Number of contexts to use.
+        context_dim: The dimension of the context tensors. This should be
+            `function.dim - 1`.
+        weights: The optional weights if using mean PCS.
+        num_full_train: Number of "full" training samples. Number of samples drawn
+            from each arm-context pair.
+        num_train_per_arm: If not using samples for all arm-context pairs for training,
+            this is the number of samples drawn for each arm. This many contexts are
+            randomly selected for each arm and those are evaluated.
+        fit_frequency: How often to fit the hyper-parameters of the GP models. Larger
+            values will reduce the computational cost but may lead to poorer model
+            predictions. 5-10 are safe choices.
+        ground_truth_kwargs: Arguments for the ground truth model / function.
+        input_dict: This is used if the experiment was terminated early and we want to
+            continue from where we left off. The experiment will warm-start from here
+            and continue up to a total number of `iterations`.
+        randomize_ties: If there are multiple minimizers / maximizers, this determines
+            whether one of them is picked randomly or as the one that is simply returned
+            by the min/max operator.
+        mode: If `input_dict` is specified, mode must be "-a", as in append, to add
+            more iterations. No other modes are currently supported.
+        dtype: Tensor data type to use.
+        device: The device to use, "cpu" / "cuda".
+    """
     assert label in labels, "label not supported!"
     torch.manual_seed(seed)
     np.random.seed(seed)
     ckwargs = {"dtype": dtype, "device": device}
+    # get some defaults
     num_full_train = num_full_train or 2
     num_train_per_arm = num_train_per_arm or 2 * context_dim + 2
     # fixing context_map for consistency across replications
@@ -211,11 +276,14 @@ def main(
 
     ground_truth = GroundTruthModel(num_arms, context_map, **ground_truth_kwargs)
 
+    # find the true best arms.
     true_means = ground_truth.evaluate_all_true()
     tm_maximizers = true_means.view(num_arms, num_contexts).argmax(dim=0)
 
+    # get the evaluations for initialization.
     arm_set = torch.arange(0, num_arms, **ckwargs).view(-1, 1)
     if use_full_train:
+        # sample from all arm-context pairs
         if label not in ["Li", "Gao"]:
             X = (
                 torch.cat(
@@ -241,34 +309,34 @@ def main(
                 .view(-1, 2)
                 .repeat(num_full_train, 1)
             )
-        Y = torch.cat([ground_truth.evaluate_all() for _ in range(num_full_train)], dim=0)
+        Y = torch.cat(
+            [ground_truth.evaluate_all() for _ in range(num_full_train)], dim=0
+        )
     else:
+        # sample only a given number of contexts for each arm.
         if label in ["Li", "Gao"]:
             raise NotImplementedError
         init_context_idcs = torch.randint(
             num_contexts, (num_arms, num_train_per_arm), device=device
         )
-        X = (
-            torch.cat(
-                [
-                    arm_set.view(-1, 1, 1).expand(-1, num_train_per_arm, -1),
-                    context_map[init_context_idcs],
-                ],
-                dim=-1,
-            )
-            .view(-1, context_dim + 1)
-        )
-        Y = ground_truth.evaluate(
-            X[..., 0].long().tolist(), X[..., 1:]
-        )
+        X = torch.cat(
+            [
+                arm_set.view(-1, 1, 1).expand(-1, num_train_per_arm, -1),
+                context_map[init_context_idcs],
+            ],
+            dim=-1,
+        ).view(-1, context_dim + 1)
+        Y = ground_truth.evaluate(X[..., 0].long().tolist(), X[..., 1:])
     num_total_train = X.shape[0]
 
+    # set some counters etc for keeping track of things
     start = time()
     existing_iterations = 0
     pcs_estimates = torch.zeros(iterations, **ckwargs)
     correct_selection = torch.zeros(iterations, num_contexts, **ckwargs)
     wall_time = torch.zeros(iterations, **ckwargs)
     if input_dict is not None:
+        # read the given output file and continue from there.
         assert torch.allclose(true_means, input_dict["true_means"])
         if mode == "-a":
             # adding iterations to existing output
@@ -292,7 +360,10 @@ def main(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
         if "ML" in label:
+            # using a ModelListGP
             if (i - existing_iterations) % fit_frequency != 0:
+                # append the last evaluations to the model with low cost updates.
+                # the hyper-parameters are not re-trained here.
                 try:
                     last_X = X[-1].view(1, -1)
                     last_idx = int(last_X[0, 0])
@@ -302,17 +373,20 @@ def main(
                     )
                     model = ModelListGP(*models)
                 except RuntimeError:
+                    # Default to fitting a fresh model in case of an error.
                     model = fit_modellist(X, Y, num_arms)
             else:
+                # Fit and train a new ModelListGP.
                 model = fit_modellist(X, Y, num_arms)
             old_model = model
         elif label in ["Li", "Gao"]:
+            # Use the independent normally distributed model.
             model = ContextualIndependentModel(X, Y.squeeze(-1))
         else:
             raise NotImplementedError
 
         if "ML" in label:
-            # ModelListGP
+            # Algorithms for ModelListGP
             if "IKG" in label:
                 with torch.no_grad():
                     next_arm, next_context = finite_ikg_maximizer_modellist(
@@ -326,6 +400,7 @@ def main(
                     [torch.tensor([next_arm], **ckwargs), context_map[next_context]]
                 ).view(1, -1)
             elif "Gao" in label:
+                # This is GP-C-OCBA
                 with torch.no_grad():
                     next_arm, next_context = gao_modellist(
                         model,
@@ -340,20 +415,22 @@ def main(
                 raise NotImplementedError
         else:
             if label == "Li":
-                # Li
+                # Li / DSCO
                 next_arm, next_context = li_sampling_strategy(model)
             elif label == "Gao":
-                # Gao
+                # Gao / C-OCBA
                 next_arm, next_context = gao_sampling_strategy(model)
             else:
                 raise NotImplementedError
             next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
+        # get the next evaluation
         if label == "ML_Gao":
             next_eval = ground_truth.evaluate(next_arm, next_context.view(1, -1))
         else:
             next_eval = ground_truth.evaluate_w_index(next_arm, next_context)
 
+        # update the training data
         X = torch.cat([X, next_point], dim=0)
         Y = torch.cat([Y, next_eval], dim=0)
 
@@ -369,6 +446,7 @@ def main(
         )
 
         # check for correct selection for empirical PCS
+        # This is for the actual reported PCS.
         if "ML" in label:
             post_mean = model.posterior(context_map).mean.t()
         else:
@@ -382,16 +460,17 @@ def main(
 
         if (i + 1) % fit_frequency == 0:
             # save the output periodically.
+            # can be used to restart in case of an error.
             rho_cs = rho(correct_selection.unsqueeze(-1)).squeeze(-1)
             output_dict = {
                 "label": label,
-                "X": X[:num_total_train + i + 1],
-                "Y": Y[:num_total_train + i + 1],
+                "X": X[: num_total_train + i + 1],
+                "Y": Y[: num_total_train + i + 1],
                 "true_means": true_means,
-                "pcs_estimates": pcs_estimates[:i + 1],
-                "correct_selection": correct_selection[:i + 1],
-                "wall_time": wall_time[:i + 1],
-                "rho_cs": rho_cs[:i + 1],
+                "pcs_estimates": pcs_estimates[: i + 1],
+                "correct_selection": correct_selection[: i + 1],
+                "wall_time": wall_time[: i + 1],
+                "rho_cs": rho_cs[: i + 1],
             }
             torch.save(output_dict, output_path)
 
@@ -411,7 +490,19 @@ def main(
     return output_dict
 
 
-def submitit_main(config, label, seed, last_arg=None):
+def submitit_main(
+    config: str, label: str, seed: Union[int, str], last_arg=None
+) -> None:
+    r"""
+    This is used with `submit.py` to submit jobs to a slurm cluster.
+
+    Args:
+        config: The name of the config folder.
+        label: The algorithm label.
+        seed: The seed to run.
+        last_arg: Used for force re-running an experiment, continuing
+            an incomplete one etc.
+    """
     current_dir = path.dirname(path.abspath(__file__))
     exp_dir = path.join(current_dir, config)
     config_path = path.join(exp_dir, "config.json")
@@ -442,7 +533,10 @@ def submitit_main(config, label, seed, last_arg=None):
             quit()
     with open(config_path, "r") as f:
         kwargs = json.load(f)
-        if kwargs["ground_truth_kwargs"]["function"] in ["cosine8", "hartmann"] and label == "ML_IKG":
+        if (
+            kwargs["ground_truth_kwargs"]["function"] in ["cosine8", "hartmann"]
+            and label == "ML_IKG"
+        ):
             kwargs["iterations"] = min(kwargs["iterations"], 1000)
     output = main(
         seed=seed,
@@ -450,7 +544,7 @@ def submitit_main(config, label, seed, last_arg=None):
         input_dict=input_dict,
         mode=mode,
         output_path=output_path,
-        **kwargs
+        **kwargs,
     )
     torch.save(output, output_path)
 

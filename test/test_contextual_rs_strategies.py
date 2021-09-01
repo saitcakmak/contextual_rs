@@ -102,12 +102,17 @@ class TestContextualRSStrategies(BotorchTestCase):
             arm_set = torch.arange(0, num_arms, **ckwargs).view(-1, 1)
             context_set = torch.rand(num_contexts, 2, **ckwargs)
 
-            train_X = torch.cat(
-                [
-                    arm_set.view(-1, 1, 1).repeat(1, num_contexts, 1),
-                    context_set.repeat(num_arms, 1, 1),
-                ], dim=-1
-            ).view(-1, 3).repeat(2, 1)
+            train_X = (
+                torch.cat(
+                    [
+                        arm_set.view(-1, 1, 1).repeat(1, num_contexts, 1),
+                        context_set.repeat(num_arms, 1, 1),
+                    ],
+                    dim=-1,
+                )
+                .view(-1, 3)
+                .repeat(2, 1)
+            )
             train_Y = torch.randn(num_arms * num_contexts * 2, 1, **ckwargs)
 
             model = LCEGP(train_X, train_Y, [0])

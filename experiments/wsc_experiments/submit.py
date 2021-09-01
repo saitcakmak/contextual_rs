@@ -69,7 +69,11 @@ for seed_batch, label in product(range(0, 10), labels):
                 existing_iterations = input_dict["pcs_estimates"].shape[0]
                 with open(config_path, "r") as f:
                     kwargs = json.load(f)
-                    if kwargs["ground_truth_kwargs"]["function"] in ["cosine8", "hartmann"] and label == "ML_IKG":
+                    if (
+                        kwargs["ground_truth_kwargs"]["function"]
+                        in ["cosine8", "hartmann"]
+                        and label == "ML_IKG"
+                    ):
                         kwargs["iterations"] = min(kwargs["iterations"], 1000)
                 if existing_iterations == kwargs["iterations"]:
                     continue

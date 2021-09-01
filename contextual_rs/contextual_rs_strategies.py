@@ -106,6 +106,8 @@ def gao_modellist(
     Gao sampling strategy adapted to work with ModelListGP by replacing
     vars / p with posterior variance.
 
+    This is the main part of the GP-C-OCBA algorithm presented in the paper.
+
     Note: This should not be used in the continuous context setting!
 
     Args:
@@ -132,16 +134,14 @@ def gao_modellist(
     mean_diffs = sorted_means[:, :1].expand(-1, num_arms - 1) - sorted_means[:, 1:]
     squared_diffs = mean_diffs.pow(2)
     hat_Z = squared_diffs / added_vars
-    # part 2 a)
+    # part 2 a) Z here is the zeta(k, c)
     flat_Z = hat_Z.view(-1)
     min_Z, minimizer = torch.min(flat_Z, dim=0)
     if randomize_ties:
         min_check = flat_Z == min_Z
         min_count = min_check.sum()
         if min_count > 1:
-            min_idcs = torch.arange(
-                0, flat_Z.shape[0], device=hat_Z.device
-            )[min_check]
+            min_idcs = torch.arange(0, flat_Z.shape[0], device=hat_Z.device)[min_check]
             minimizer = min_idcs[
                 torch.randint(min_count, (1,), device=hat_Z.device)
             ].squeeze()
@@ -149,6 +149,7 @@ def gao_modellist(
     next_context = context_set[min_context]
     min_sorted_arm = minimizer % (num_arms - 1)
     # part 2 b) - train_counts stands in for the p_values
+    # we calculate the psi^{(1/2)} here, recorded as y_s_1/2
     if infer_p:
         # we just need the ratio for the next context
         prior_variances = [
@@ -186,6 +187,8 @@ def gao_lcegp(
     Gao sampling strategy adapted to work with LCEGP by replacing
     vars / p with posterior variance.
 
+    This is experimental and does not work too well due to issues with the model.
+
     Note: This should not be used in the continuous context setting!
 
     Args:
@@ -207,8 +210,9 @@ def gao_lcegp(
     arm_context_pairs = torch.cat(
         [
             arm_set.repeat(num_contexts, 1, 1),
-            context_set.view(num_contexts, 1, -1).repeat(1, num_arms, 1)
-        ], dim=-1
+            context_set.view(num_contexts, 1, -1).repeat(1, num_arms, 1),
+        ],
+        dim=-1,
     )
     posterior = model.posterior(arm_context_pairs)
     # These are num_contexts x num_arms
@@ -227,9 +231,7 @@ def gao_lcegp(
     if randomize_ties:
         min_check = flat_Z == min_Z
         min_count = min_check.sum()
-        min_idcs = torch.arange(
-            0, flat_Z.shape[0], device=hat_Z.device
-        )[min_check]
+        min_idcs = torch.arange(0, flat_Z.shape[0], device=hat_Z.device)[min_check]
         minimizer = min_idcs[
             torch.randint(min_count, (1,), device=hat_Z.device)
         ].squeeze()
@@ -239,7 +241,9 @@ def gao_lcegp(
     # part 2 b) - train_counts stands in for the p_values
     if infer_p:
         # we just need the ratio for the next context
-        prior_variances = model.forward(arm_context_pairs[min_context]).variance.squeeze(-1)
+        prior_variances = model.forward(
+            arm_context_pairs[min_context]
+        ).variance.squeeze(-1)
         ratio = prior_variances / variances[min_context]
         y_vals = ratio / variances[min_context]
     else:
