@@ -27,6 +27,7 @@ from contextual_rs.contextual_rs_strategies import (
     li_sampling_strategy,
     gao_sampling_strategy,
     gao_modellist,
+    sur_modellist,
 )
 from contextual_rs.finite_ikg import (
     finite_ikg_maximizer_modellist,
@@ -181,6 +182,8 @@ labels = [
     "ML_Gao",
     "Li",
     "Gao",
+    "SUR_simple",
+    "SUR_fantasy",
 ]
 
 
@@ -359,7 +362,7 @@ def main(
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
-        if "ML" in label:
+        if "ML" in label or "SUR" in label:
             # using a ModelListGP
             if (i - existing_iterations) % fit_frequency != 0:
                 # append the last evaluations to the model with low cost updates.
@@ -413,6 +416,16 @@ def main(
                 ).view(1, -1)
             else:
                 raise NotImplementedError
+        elif "SUR" in label:
+            with torch.no_grad():
+                next_arm, next_context = sur_modellist(
+                    model=model,
+                    context_set=context_map,
+                    use_cheap_mean_apx="simple" in label,
+                )
+            next_point = torch.cat(
+                [torch.tensor([next_arm], **ckwargs), next_context]
+            ).view(1, -1)
         else:
             if label == "Li":
                 # Li / DSCO
@@ -425,7 +438,7 @@ def main(
             next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
         # get the next evaluation
-        if label == "ML_Gao":
+        if label == "ML_Gao" or "SUR" in label:
             next_eval = ground_truth.evaluate(next_arm, next_context.view(1, -1))
         else:
             next_eval = ground_truth.evaluate_w_index(next_arm, next_context)
@@ -447,7 +460,7 @@ def main(
 
         # check for correct selection for empirical PCS
         # This is for the actual reported PCS.
-        if "ML" in label:
+        if "ML" in label or "SUR" in label:
             post_mean = model.posterior(context_map).mean.t()
         else:
             post_mean = model.means

@@ -1,7 +1,8 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 import torch
 from botorch.models import ModelListGP
+from botorch.sampling import SobolQMCNormalSampler
 from torch import Tensor
 
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
@@ -262,3 +263,107 @@ def gao_lcegp(
     # map the sorted_arm to original index
     next_arm = idcs[min_context, next_sorted_arm]
     return next_arm, next_context
+
+
+def sur_modellist(
+    model: ModelListGP,
+    context_set: Tensor,
+    use_cheap_mean_apx: bool = False,
+    num_fantasies: Optional[int] = None,
+) -> Tuple[int, Tensor]:
+    r"""This defines an experimental sequential uncertainty reduction strategy.
+    This is similar to GP-C-OCBA in its use of (an inverted) zeta, but it decides
+    which arm-context pair to sample based on the reduction in the maximum of the
+    1 / zeta, which is used as the uncertainty functional here.
+
+    Args:
+        model: A ModelListGP where each model corresponds to a different arm.
+        context_set: The set of contexts to consider. `num_contexts x d_c`.
+        use_cheap_mean_apx: If True, we don't bother with fantasies and just use
+            mu_n in place of mu_{n+1} in the denominator. This is a deterministic
+            and biased approximation.
+        num_fantasies: Number of fantasies to use to approximate E[H_{n+1}]. Defaults
+            to 64 (or 1 if using the cheap apx).
+
+    Returns:
+        The next arm context pair to evaluate.
+    """
+    if use_cheap_mean_apx:
+        num_fantasies = 1
+    else:
+        num_fantasies = num_fantasies or 64
+    # find the current uncertainty functional and the maximizer
+    posterior = model.posterior(context_set)
+    # These are num_contexts x num_arms
+    means = posterior.mean
+    variances = posterior.variance
+    sorted_means, idcs = means.sort(dim=-1, descending=True)
+    sorted_vars = variances.gather(dim=-1, index=idcs)
+    num_arms = len(model.models)
+    added_vars = sorted_vars[:, :1].expand(-1, num_arms - 1) + sorted_vars[:, 1:]
+    mean_diffs = sorted_means[:, :1].expand(-1, num_arms - 1) - sorted_means[:, 1:]
+    squared_diffs = mean_diffs.pow(2)
+    # This is 1/zeta, and we're interested in its maximizer.
+    inv_Z = added_vars / squared_diffs
+    flat_Z = inv_Z.view(-1)
+    max_Z, maximizer = torch.max(flat_Z, dim=0)
+    # TODO: error for now if there are multiple maximizers.
+    maximizer_count = (flat_Z == max_Z).sum()
+    if maximizer_count > 1:
+        raise NotImplementedError
+    # The context idx that currently achieves the maximum
+    max_context = maximizer // (num_arms - 1)
+    # The non-best arm that achieves the maximizer, +1 to account for the
+    # 0th index that got removed while calculating zeta.
+    max_sorted_arm = (maximizer % (num_arms - 1)) + 1
+    max_arm = idcs[max_context, max_sorted_arm]
+    best_arm = idcs[max_context, 0]
+    # The arm-context leading to max expected uncertainty reduction must reduce
+    # the posterior variance of either the best arm with this context or the
+    # max arm with this context. So, it can either be these directly, or some
+    # other context with one of these arms.
+    # Let's fantasize on all contexts with these two arms and see what leads to the
+    # most reduction. Since posterior variance is deterministic, we only need one
+    # fantasy model.
+    num_contexts = context_set.shape[0]
+    min_max_list = []
+    sampler = SobolQMCNormalSampler(num_fantasies)
+    for arm_idx in [best_arm, max_arm]:
+        fm = model.models[arm_idx].fantasize(
+            context_set.unsqueeze(-2), sampler=sampler
+        )
+        variances_clone = variances.clone().repeat(num_fantasies, num_contexts, 1, 1)
+        fm_posterior = fm.posterior(context_set)
+        variances_clone[..., arm_idx] = fm_posterior.variance.squeeze(-1)
+        means_clone = means.clone().repeat(num_fantasies, num_contexts, 1, 1)
+        if use_cheap_mean_apx:
+            new_idcs = idcs.expand_as(variances_clone)
+            new_squared_diffs = squared_diffs.expand(num_fantasies, num_contexts, -1, -1)
+        else:
+            # Update the means with the fantasy posterior means.
+            means_clone[..., arm_idx] = fm_posterior.mean.squeeze(-1)
+            new_sorted_means, new_idcs = means_clone.sort(dim=-1, descending=True)
+            new_mean_diffs = new_sorted_means[..., :1].expand(
+                -1, -1, -1, num_arms - 1
+            ) - new_sorted_means[..., 1:]
+            new_squared_diffs = new_mean_diffs.pow(2)
+        sorted_vars = variances_clone.gather(dim=-1, index=new_idcs)
+        added_vars = sorted_vars[..., :1].expand(
+            -1, -1, -1, num_arms - 1
+        ) + sorted_vars[..., 1:]
+        inv_Z = added_vars / new_squared_diffs
+        max_Z = inv_Z.max(dim=-1).values.max(dim=-1).values.mean(dim=0)
+        # this is the minimum new uncertainty measure achieved and what context
+        # we fantasized from to achieve it.
+        min_max_list.append(max_Z.min(dim=-1))
+    if min_max_list[0][0] < min_max_list[1][0]:
+        # evaluating the best arm with the given context lead to the max reduction
+        next_arm = best_arm
+        next_context = context_set[min_max_list[0][1]]
+    else:
+        # evaluating the max arm lead to the max reduction
+        next_arm = max_arm
+        next_context = context_set[min_max_list[1][1]]
+    return next_arm, next_context
+
+

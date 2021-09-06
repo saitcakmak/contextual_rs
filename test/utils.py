@@ -13,7 +13,7 @@ class BotorchTestCase(TestCase):
     """
 
     device = torch.device("cpu")
-    device_list = ["cpu"] + ["cuda"] if torch.cuda.is_available() else []
+    device_list = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
     dtype_list = [torch.float, torch.double]
 
     def setUp(self):
