@@ -1,3 +1,4 @@
+import os
 from typing import List
 from multiprocessing import Pool
 
@@ -10,6 +11,12 @@ from contextual_rs.test_functions.covid_simulators.analysis_helpers import (
     run_multiple_trajectories,
 )
 from contextual_rs.test_functions.covid_simulators.modified_params import base_params
+
+output_store = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "covid_simulators",
+    "stored_simulations.pt",
+)
 
 
 class CovidSim(Module):
@@ -135,6 +142,14 @@ class CovidSim(Module):
             run_seed = int(torch.randint(low=1, high=11, size=(1,)))
         else:
             assert 1 <= run_seed <= 10
+
+        try:
+            # If available, use stored simulation output.
+            output_dict = torch.load(output_store)
+            return output_dict[(tuple(X.flatten().tolist()), run_seed)]
+        except (FileNotFoundError, KeyError):
+            pass
+
         np_random_state = np.random.get_state()
         torch_state = torch.random.get_rng_state()
         np.random.seed(run_seed)

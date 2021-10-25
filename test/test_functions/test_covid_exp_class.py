@@ -9,7 +9,7 @@ class TestCovid(BotorchTestCase):
     def test_covid_sim(self):
         sim = CovidSim()
         X = (
-            torch.tensor([[0.7, 0.2, 0.0040, 0.0040, 0.0080]])
+            torch.tensor([[0.2, 0.2, 0.0040, 0.0040, 0.0080]])
             .reshape(1, 1, -1)
         )
         self.assertTrue(sim(X).shape == torch.Size([1, 1, 1]))
@@ -19,7 +19,7 @@ class TestCovid(BotorchTestCase):
     def test_covid_eval(self):
         sim = CovidEval()
         X = (
-            torch.tensor([[0.7, 0.2, 0.0040, 0.0040, 0.0080]])
+            torch.tensor([[0.3, 0.2, 0.0040, 0.0040, 0.0080]])
             .reshape(1, 1, -1)
             .repeat(4, 1, 1)
         )
