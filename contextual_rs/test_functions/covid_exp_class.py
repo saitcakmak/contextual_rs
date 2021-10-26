@@ -122,7 +122,7 @@ class CovidSim(Module):
                 If specified, it should be an integer from [1, 10].
 
         Returns:
-            An `n x 1 x 1`-dim tensor of total number of infections.
+            An `n [x 1] x 1`-dim tensor of total number of infections.
         """
         assert X.dim() <= 3
         assert X.shape[-1] == self.dim
@@ -136,7 +136,23 @@ class CovidSim(Module):
         out_size = X.size()[:-1] + (1,)
         X = X.reshape(-1, 1, self.dim)
         if X.shape[0] > 1:
-            return self.parallelize(X, run_seed)
+            try:
+                # If available, use stored simulation output.
+                output_dict = torch.load(output_store)
+                missing_idcs = []
+                return_val = torch.zeros(out_size)
+                for i in range(X.shape[0]):
+                    tmp_seed = run_seed or int(torch.randint(low=1, high=11, size=(1,)))
+                    key = (tuple(X[i].flatten().tolist()), tmp_seed)
+                    if key in output_dict:
+                        return_val[i] = output_dict[key]
+                    else:
+                        missing_idcs.append(i)
+                if len(missing_idcs):
+                    return_val[missing_idcs] = self.parallelize(X[missing_idcs], run_seed)
+                return return_val
+            except FileNotFoundError:
+                return self.parallelize(X, run_seed)
 
         if run_seed is None:
             run_seed = int(torch.randint(low=1, high=11, size=(1,)))
@@ -254,7 +270,7 @@ class CovidEval(CovidSim):
             run_seed: Do NOT pass in manually!
 
         Returns:
-            An `n x 1 x 1`-dim tensor of total number of infections, averaged
+            An `n [x 1] x 1`-dim tensor of total number of infections, averaged
             over all 10 seeds.
         """
         if run_seed is not None:
