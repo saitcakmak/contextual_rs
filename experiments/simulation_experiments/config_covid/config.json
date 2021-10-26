@@ -1,0 +1,7 @@
+{
+    "iterations": 200,
+    "fit_frequency": 10,
+    "use_full_train": 1,
+    "rho_key": "mean",
+    "simulator_name": "covid"
+}
