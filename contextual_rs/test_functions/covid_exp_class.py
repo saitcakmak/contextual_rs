@@ -146,7 +146,10 @@ class CovidSim(Module):
         try:
             # If available, use stored simulation output.
             output_dict = torch.load(output_store)
-            return output_dict[(tuple(X.flatten().tolist()), run_seed)]
+            if self.negate:
+                return -output_dict[(tuple(X.flatten().tolist()), run_seed)]
+            else:
+                return output_dict[(tuple(X.flatten().tolist()), run_seed)]
         except (FileNotFoundError, KeyError):
             pass
 
@@ -225,7 +228,7 @@ class CovidSim(Module):
             ]
         else:
             arg_list = [
-                (X[i].reshape(1, 1, -1), True, run_seed) for i in range(X.shape[0])
+                (X[i].reshape(1, 1, -1), run_seed) for i in range(X.shape[0])
             ]
         with Pool() as pool:
             out = pool.starmap(self, arg_list)
