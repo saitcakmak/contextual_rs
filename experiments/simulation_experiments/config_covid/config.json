@@ -1,7 +1,8 @@
 {
-    "iterations": 200,
+    "num_total_samples": 1500,
     "fit_frequency": 10,
     "use_full_train": 1,
+    "num_full_train": 2,
     "rho_key": "mean",
     "simulator_name": "covid"
 }

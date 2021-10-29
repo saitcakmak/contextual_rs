@@ -1,5 +1,5 @@
 """
-Comparing the GP-C-OCBA with IKG and DSCO and C-OCBA.
+For running the experiments with the modified TS and TS+ policies.
 This is for using the Covid & Cancer simulators.
 """
 import json
@@ -10,22 +10,10 @@ from typing import Union, List, Optional
 
 import numpy as np
 import torch
-from botorch import fit_gpytorch_model
-from botorch.models import SingleTaskGP, ModelListGP
-from botorch.models.transforms import Standardize, Normalize
 from botorch.utils.transforms import unnormalize
-from gpytorch import ExactMarginalLogLikelihood
 from torch import Tensor
 
-from contextual_rs.contextual_rs_strategies import (
-    li_sampling_strategy,
-    gao_sampling_strategy,
-    gao_modellist,
-)
-from contextual_rs.finite_ikg import (
-    finite_ikg_maximizer_modellist,
-)
-from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
+from contextual_rs.modified_ts_policies import modified_ts, modified_ts_plus, get_beta_hat
 from contextual_rs.test_functions.covid_exp_class import CovidSim, CovidEval
 from contextual_rs.test_functions.esophageal_cancer import EsophagealCancer
 
@@ -74,20 +62,13 @@ class SimulatorWrapper:
             self.arm_map = self.covid_arms
             self.num_arms = self.arm_map.shape[0]
             self.context_map = unnormalize(CovidSim.w_samples, CovidSim.bounds[:, 2:])
+            # Extreme design is the edges of the cube.
+            self.extreme_design = self.context_map[[0, 2, 6, 8, 18, 20, 24, 26]]
             self.dim = CovidSim.dim
             self.function = CovidSim()
             self.true_function = CovidEval()
         else:
             # Arguments for cancer simulator.
-            self.arm_map = torch.tensor([0, 1, 2])
-            self.num_arms = 3
-            self.context_map = 0  # TODO: should be stored as unnormalized
-            self.dim = 5
-            self.function = EsophagealCancer()
-            # TODO: may want to keep this cheap as well
-            self.true_function = lambda X: 0  # TODO:
-            # TODO: We need the true_function to be cheap to evaluate.
-            #  Probably simulate and store some value.
             raise NotImplementedError
         self.ckwargs = ckwargs
 
@@ -151,56 +132,22 @@ class SimulatorWrapper:
         ).view(-1, self.dim)
         return self.function(X).view(-1, 1).to(**self.ckwargs)
 
-
-def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
-    r"""
-    Fit a ModelListGP with a SingleTaskGP model for each arm.
-
-    Args:
-        X: A tensor representing all arm-context pairs that have been evaluated.
-            First column represents the arm.
-        Y: A tensor representing the corresponding evaluations.
-        num_arms: An integer denoting the number of arms.
-
-    Returns:
-        A fitted ModelListGP.
-    """
-    mask_list = [X[..., 0] == i for i in range(num_arms)]
-    model = ModelListGP(
-        *[
-            SingleTaskGP(
-                X[mask_list[i]][..., 1:],
-                Y[mask_list[i]],
-                outcome_transform=Standardize(m=1),
-                input_transform=Normalize(d=X.shape[-1] - 1),
-            )
-            for i in range(num_arms)
-        ]
-    )
-    for m in model.models:
-        mll = ExactMarginalLogLikelihood(m.likelihood, m)
-        fit_gpytorch_model(mll)
-    return model
-
-
-def fit_single_gp(X: Tensor, Y: Tensor) -> SingleTaskGP:
-    r"""
-    Fit a SingleTaskGP on all data.
-    """
-    model = SingleTaskGP(
-        X, Y, outcome_transform=Standardize(m=1), input_transform=Normalize(d=X.shape[-1]),
-    )
-    mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
-    return model
-
+    def evaluate_extreme_design(self):
+        X = torch.cat(
+            [
+                self.arm_map.unsqueeze(-2).repeat(1, self.extreme_design.shape[0], 1),
+                self.extreme_design.repeat(self.num_arms, 1, 1),
+            ],
+            dim=-1,
+        ).view(-1, self.dim)
+        return self.function(X).view(-1, 1).to(**self.ckwargs)
 
 # These are the allowed algorithm names.
 labels = [
-    "IKG",
-    "GP-C-OCBA",
-    "DSCO",
-    "C-OCBA",
+    "TS",
+    "TS+",
+    "TS_full",
+    "TS+_full",
 ]
 
 
@@ -208,16 +155,12 @@ def main(
     num_total_samples: int,
     seed: int,
     label: str,
-    use_full_train: bool,
     output_path: str,
     simulator_name: str,
     rho_key: str = "mean",
     weights: Optional[Tensor] = None,
     num_full_train: Optional[int] = None,
-    num_train_per_arm: Optional[int] = None,
-    fit_frequency: int = 1,  # set > 1 if we don't want to fit the GP at each iteration.
     input_dict: dict = None,  # this is for adding more iterations
-    randomize_ties: bool = True,
     mode: Optional[str] = None,
     dtype: torch.dtype = torch.double,
     device: str = "cpu",
@@ -231,7 +174,6 @@ def main(
         num_total_samples: Total number of samples to use. Includes the initialization.
         seed: The seed to use for this replication.
         label: This is the algorithm label, select from the list above.
-        use_full_train: If True, we evaluate all arm context pairs for initialization.
         output_path: The file path for saving the experiment output.
         simulator_name: The name of the simulator to use, "covid" or "cancer".
         rho_key: "mean" or "worst". Specifies the contextual PCS to use.
@@ -239,18 +181,9 @@ def main(
         weights: The optional weights if using mean PCS.
         num_full_train: Number of "full" training samples. Number of samples drawn
             from each arm-context pair.
-        num_train_per_arm: If not using samples for all arm-context pairs for training,
-            this is the number of samples drawn for each arm. This many contexts are
-            randomly selected for each arm and those are evaluated.
-        fit_frequency: How often to fit the hyper-parameters of the GP models. Larger
-            values will reduce the computational cost but may lead to poorer model
-            predictions. 5-10 are safe choices.
         input_dict: This is used if the experiment was terminated early and we want to
             continue from where we left off. The experiment will warm-start from here
             and continue up to a total number of `iterations`.
-        randomize_ties: If there are multiple minimizers / maximizers, this determines
-            whether one of them is picked randomly or as the one that is simply returned
-            by the min/max operator.
         mode: If `input_dict` is specified, mode must be "-a", as in append, to add
             more iterations. No other modes are currently supported.
         dtype: Tensor data type to use.
@@ -262,10 +195,9 @@ def main(
     ckwargs = {"dtype": dtype, "device": device}
     # get some defaults
     num_full_train = num_full_train or 2
-    num_train_per_arm = num_train_per_arm or 10
     if weights is not None:
         weights = torch.as_tensor(weights).view(-1)
-    use_full_train = bool(use_full_train)
+    use_full_design = "full" in label
 
     def rho(X: Tensor) -> Tensor:
         r"""Operates on -2 dimension. Dimension gets reduced by 1."""
@@ -283,199 +215,112 @@ def main(
     num_arms = simulator.num_arms
     context_map = simulator.context_map
     num_contexts = context_map.shape[0]
-    context_dim = context_map.shape[-1]
 
     # find the true best arms.
     true_means = simulator.evaluate_all_true()
     tm_maximizers = true_means.view(num_arms, num_contexts).argmax(dim=0)
 
     # get the evaluations for initialization.
-    # We use the indices for the arms to avoid issues with having different
-    # dimensions for the arms for different problems.
-    arm_idcs = torch.arange(0, num_arms, **ckwargs).view(-1, 1)
-    if use_full_train:
-        # sample from all arm-context pairs
-        if label not in ["DSCO", "C-OCBA"]:
-            X = (
-                torch.cat(
-                    [
-                        arm_idcs.view(-1, 1, 1).expand(-1, num_contexts, -1),
-                        context_map.expand(num_arms, -1, -1),
-                    ],
-                    dim=-1,
-                )
-                .view(-1, context_dim + 1)
-                .repeat(num_full_train, 1)
-            )
-        else:
-            context_idx_set = torch.arange(0, num_contexts, **ckwargs).view(-1, 1)
-            X = (
-                torch.cat(
-                    [
-                        arm_idcs.view(-1, 1, 1).expand(-1, num_contexts, -1),
-                        context_idx_set.expand(num_arms, -1, -1),
-                    ],
-                    dim=-1,
-                )
-                .view(-1, 2)
-                .repeat(num_full_train, 1)
-            )
-        Y = torch.cat(
-            [simulator.evaluate_all() for _ in range(num_full_train)], dim=0
+    # sample from all designs / extreme designs
+    active_design = context_map if use_full_design else simulator.extreme_design
+    samples_count = torch.full((num_arms, active_design.shape[0]), num_full_train, **ckwargs)
+    Y = torch.stack(
+        [
+            (simulator.evaluate_all() if use_full_design else simulator.evaluate_extreme_design()).view_as(samples_count) for _ in range(num_full_train)
+        ]
+    )
+    # NOTE: Use Y.sum(dim=0) / samples_count to get the sample mean.
+    # The regression estimators require the "X" to have the intercept term.
+    design_w_intercept = torch.cat(
+        [torch.ones(active_design.shape[0], 1, **ckwargs), active_design], dim=-1
+    )
+    all_designs_w_intercept = torch.cat(
+        [torch.ones(context_map.shape[0], 1, **ckwargs), context_map], dim=-1
+    )
+
+    if "TS+" in label:
+        fractions = modified_ts_plus(
+            design_w_intercept, Y, total_budget=num_total_samples, ratios_only=True,
         )
     else:
-        # sample only a given number of contexts for each arm.
-        if label in ["DSCO", "C-OCBA"]:
-            raise NotImplementedError
-        init_context_idcs = torch.randint(
-            num_contexts, (num_arms, num_train_per_arm), device=device
+        fractions = modified_ts(
+            design_w_intercept, Y, total_budget=num_total_samples, ratios_only=True,
         )
-        X = torch.cat(
-            [
-                arm_idcs.view(-1, 1, 1).expand(-1, num_train_per_arm, -1),
-                context_map[init_context_idcs],
-            ],
-            dim=-1,
-        ).view(-1, context_dim + 1)
-        Y = simulator.evaluate(X[..., 0].long().tolist(), X[..., 1:])
-    num_total_train = X.shape[0]
-    iterations = num_total_samples - num_total_train
 
     # set some counters etc for keeping track of things
     start = time()
-    existing_iterations = 0
-    correct_selection = torch.zeros(iterations, num_contexts, **ckwargs)
-    wall_time = torch.zeros(iterations, **ckwargs)
+    correct_selection = torch.zeros(0, num_contexts, **ckwargs)
+    wall_time = torch.zeros(0, **ckwargs)
     if input_dict is not None:
         # read the given output file and continue from there.
         assert torch.allclose(true_means, input_dict["true_means"])
         if mode == "-a":
             # adding iterations to existing output
             assert input_dict["label"] == label
-            existing_iterations = input_dict["correct_selection"].shape[0]
-            if existing_iterations >= iterations:
-                raise ValueError("Existing output has as many or more iterations!")
-            correct_selection[:existing_iterations] = input_dict["correct_selection"]
-            wall_time[:existing_iterations] = input_dict["wall_time"]
+            samples_count = input_dict["samples_count"]
+            if samples_count.sum() >= num_total_samples:
+                raise ValueError("Existing output has as many or more samples!")
+            correct_selection = input_dict["correct_selection"]
+            wall_time = input_dict["wall_time"]
             start -= float(input_dict["wall_time"][-1])
-            X = input_dict["X"]
             Y = input_dict["Y"]
         else:
             # This should never happen!
             raise RuntimeError("Mode unsupported!")
-    old_model = None
-    for i in range(existing_iterations, iterations):
+
+    for i in range(int(samples_count.sum()), num_total_samples):
         if i % 10 == 0:
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
-        if label in ["IKG", "GP-C-OCBA"]:
-            # using a ModelListGP
-            if (i - existing_iterations) % fit_frequency != 0:
-                # append the last evaluations to the model with low cost updates.
-                # the hyper-parameters are not re-trained here.
-                try:
-                    last_X = X[-1].view(1, -1)
-                    last_idx = int(last_X[0, 0])
-                    models = old_model.models
-                    models[last_idx] = models[last_idx].condition_on_observations(
-                        X=last_X[:, 1:], Y=Y[-1].view(-1, 1)
-                    )
-                    model = ModelListGP(*models)
-                except RuntimeError:
-                    # Default to fitting a fresh model in case of an error.
-                    model = fit_modellist(X, Y, num_arms)
-            else:
-                # Fit and train a new ModelListGP.
-                model = fit_modellist(X, Y, num_arms)
-            old_model = model
-        elif label in ["DSCO", "C-OCBA"]:
-            # Use the independent normally distributed model.
-            model = ContextualIndependentModel(X, Y.squeeze(-1))
-        else:
-            raise NotImplementedError
 
-        if label in ["IKG", "GP-C-OCBA"]:
-            # Algorithms for ModelListGP
-            if "IKG" in label:
-                with torch.no_grad():
-                    next_arm, next_context = finite_ikg_maximizer_modellist(
-                        model,
-                        context_map,
-                        weights,
-                        randomize_ties,
-                        rho=rho if "rho" in label else None,
-                    )
-                next_point = torch.cat(
-                    [torch.tensor([next_arm], **ckwargs), context_map[next_context]]
-                ).view(1, -1)
-            elif "GP-C-OCBA" in label:
-                # This is GP-C-OCBA
-                with torch.no_grad():
-                    next_arm, next_context = gao_modellist(
-                        model,
-                        context_map,
-                        randomize_ties,
-                        infer_p="infer_p" in label,
-                    )
-                next_point = torch.cat(
-                    [torch.tensor([next_arm], **ckwargs), next_context]
-                ).view(1, -1)
-            else:
-                raise NotImplementedError
-        else:
-            if label == "DSCO":
-                next_arm, next_context = li_sampling_strategy(model)
-            elif label == "C-OCBA":
-                next_arm, next_context = gao_sampling_strategy(model)
-            else:
-                raise NotImplementedError
-            next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
+        proposed_allocation = (fractions * i).round()
+        new_allocation = torch.max(samples_count, proposed_allocation)
+        additional_samples = new_allocation - samples_count
+        if additional_samples.sum() == 0:
+            continue
 
-        # get the next evaluation
-        if label == "GP-C-OCBA":
-            next_eval = simulator.evaluate(next_arm, next_context.view(1, -1))
-        else:
-            next_eval = simulator.evaluate_w_index(next_arm, next_context)
+        # Get the new samples and append to Y.
+        new_Y = torch.zeros(int(additional_samples.max()), *samples_count.shape, **ckwargs)
+        for i, add_ in enumerate(additional_samples):
+            for j, count in enumerate(add_):
+                if count:
+                    arms = [i] * int(count)
+                    contexts = active_design[j].view(1, -1).repeat(int(count), 1)
+                    new_Y[:int(count), i, j] = simulator.evaluate(arms, contexts).view(-1)
+        Y = torch.cat([Y, new_Y], dim=0)
+        samples_count = new_allocation
 
-        # update the training data
-        X = torch.cat([X, next_point], dim=0)
-        Y = torch.cat([Y, next_eval], dim=0)
+        # Use sum / count to get Y_mean. We may have samples missing (0 values).
+        Y_mean = Y.sum(dim=0) / samples_count
 
-        # check for correct selection for empirical PCS
-        # This is for the actual reported PCS.
-        if label in ["IKG", "GP-C-OCBA"]:
-            post_mean = model.posterior(context_map).mean.t()
-        else:
-            post_mean = model.means
+        # Get the beta and update the predictions.
+        beta = get_beta_hat(design_w_intercept, Y_mean)
+        # The linear predictions for arms x contexts
+        predictions = beta.matmul(all_designs_w_intercept.transpose(-2, -1))
+        maximizers = predictions.argmax(dim=0)
 
-        maximizers = post_mean.argmax(dim=0)
+        correct_selection = torch.cat([correct_selection, (tm_maximizers == maximizers).unsqueeze(0)])
+        wall_time = torch.cat([wall_time, torch.tensor([time() - start], **ckwargs)])
 
-        correct_selection[i] = tm_maximizers == maximizers
-
-        wall_time[i] = time() - start
-
-        if (i + 1) % fit_frequency == 0:
-            # save the output periodically.
-            # can be used to restart in case of an error.
-            rho_cs = rho(correct_selection.unsqueeze(-1)).squeeze(-1)
-            output_dict = {
-                "label": label,
-                "X": X[: num_total_train + i + 1],
-                "Y": Y[: num_total_train + i + 1],
-                "true_means": true_means,
-                "correct_selection": correct_selection[: i + 1],
-                "wall_time": wall_time[: i + 1],
-                "rho_cs": rho_cs[: i + 1],
-            }
-            torch.save(output_dict, output_path)
+        # save the output periodically.
+        # can be used to restart in case of an error.
+        rho_cs = rho(correct_selection.unsqueeze(-1)).squeeze(-1)
+        output_dict = {
+            "label": label,
+            "Y": Y,
+            "true_means": true_means,
+            "correct_selection": correct_selection,
+            "wall_time": wall_time,
+            "rho_cs": rho_cs,
+        }
+        torch.save(output_dict, output_path)
 
     # apply rho to correct selection
     rho_cs = rho(correct_selection.unsqueeze(-1)).squeeze(-1)
 
     output_dict = {
         "label": label,
-        "X": X,
         "Y": Y,
         "true_means": true_means,
         "correct_selection": correct_selection,
@@ -530,6 +375,8 @@ def submitit_main(
         kwargs = json.load(f)
         # if label == "ML_IKG":
         #     kwargs["iterations"] = min(kwargs["iterations"], 1000)
+    for key in ["fit_frequency", "use_full_train"]:
+        kwargs.pop(key, None)
     output = main(
         seed=seed,
         label=label,
