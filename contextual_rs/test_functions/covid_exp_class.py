@@ -17,6 +17,7 @@ output_store = os.path.join(
     "covid_simulators",
     "stored_simulations.pt",
 )
+MAX_SEED = 30
 
 
 class CovidSim(Module):
@@ -85,7 +86,7 @@ class CovidSim(Module):
     ) -> None:
         """
         Initialize the problem with given number of populations.
-        The decision variables (x) will be num_pop - 1 dimensional
+        The decision variables (x) will be `num_pop - 1` dimensional
         Here the context is taken as the initial_prevalence
 
         Args:
@@ -119,7 +120,7 @@ class CovidSim(Module):
             run_seed: Seed for evaluation - typically None and randomized.
                 If evaluating multiple X with seed specified, they will share it.
                 If None, they will have different randomly drawn seeds.
-                If specified, it should be an integer from [1, 10].
+                If specified, it should be an integer from [1, MAX_SEED].
 
         Returns:
             An `n [x 1] x 1`-dim tensor of total number of infections.
@@ -142,7 +143,7 @@ class CovidSim(Module):
                 missing_idcs = []
                 return_val = torch.zeros(out_size)
                 for i in range(X.shape[0]):
-                    tmp_seed = run_seed or int(torch.randint(low=1, high=11, size=(1,)))
+                    tmp_seed = run_seed or int(torch.randint(low=1, high=MAX_SEED + 1, size=(1,)))
                     key = (tuple(X[i].flatten().tolist()), tmp_seed)
                     if key in output_dict:
                         return_val[i] = output_dict[key]
@@ -155,9 +156,9 @@ class CovidSim(Module):
                 return self.parallelize(X, run_seed)
 
         if run_seed is None:
-            run_seed = int(torch.randint(low=1, high=11, size=(1,)))
+            run_seed = int(torch.randint(low=1, high=MAX_SEED + 1, size=(1,)))
         else:
-            assert 1 <= run_seed <= 10
+            assert 1 <= run_seed <= MAX_SEED
 
         try:
             # If available, use stored simulation output.
@@ -238,7 +239,7 @@ class CovidSim(Module):
             arg_list = [
                 (
                     X[i].reshape(1, 1, -1),
-                    int(torch.randint(low=1, high=11, size=(1,))),
+                    int(torch.randint(low=1, high=MAX_SEED + 1, size=(1,))),
                 )
                 for i in range(X.shape[0])
             ]
@@ -255,12 +256,12 @@ class CovidSim(Module):
 class CovidEval(CovidSim):
     """
     This is purely for evaluating covid solutions. It will call CovidSim with
-    all 10 seeds and average over.
+    all MAX_SEED seeds and average over.
     """
 
     def forward(self, X: Tensor, run_seed: int = None) -> Tensor:
         """
-        Anything but X is ignored. Calls CovidSim with all 10 seeds and
+        Anything but X is ignored. Calls CovidSim with all MAX_SEED seeds and
         averages the results.
 
         Args:
@@ -271,14 +272,14 @@ class CovidEval(CovidSim):
 
         Returns:
             An `n [x 1] x 1`-dim tensor of total number of infections, averaged
-            over all 10 seeds.
+            over all MAX_SEED seeds.
         """
         if run_seed is not None:
             # This should never be done manually. Only for call to self()
             # from super().parallelize().
             return super().forward(X, run_seed=run_seed)
-        out = torch.empty(10, *X.shape[:-1], 1)
-        for i in range(10):
+        out = torch.empty(MAX_SEED, *X.shape[:-1], 1)
+        for i in range(MAX_SEED):
             out[i] = super().forward(X, run_seed=i + 1).reshape(*X.shape[:-1], 1)
         out = torch.mean(out, dim=0)
         return out
