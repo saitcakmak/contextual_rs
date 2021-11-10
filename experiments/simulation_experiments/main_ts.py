@@ -14,7 +14,7 @@ from botorch.utils.transforms import unnormalize
 from torch import Tensor
 
 from contextual_rs.modified_ts_policies import modified_ts, modified_ts_plus, get_beta_hat
-from contextual_rs.test_functions.covid_exp_class import CovidSim, CovidEval
+from contextual_rs.test_functions.covid_exp_class import CovidSim, CovidEval, CovidSimV2, CovidEvalV2
 from contextual_rs.test_functions.esophageal_cancer import EsophagealCancer
 
 
@@ -56,7 +56,7 @@ class SimulatorWrapper:
             function: The name of the base test function.
             ckwargs: Common tensor arguments, dtype and device.
         """
-        assert function in ["covid", "cancer"]
+        assert function in ["covid", "covid_v2", "cancer"]
         if function == "covid":
             # Arguments for Covid simulator.
             self.arm_map = self.covid_arms
@@ -65,8 +65,18 @@ class SimulatorWrapper:
             # Extreme design is the edges of the cube.
             self.extreme_design = self.context_map[[0, 2, 6, 8, 18, 20, 24, 26]]
             self.dim = CovidSim.dim
-            self.function = CovidSim()
-            self.true_function = CovidEval()
+            self.function = CovidSim(negate=True)
+            self.true_function = CovidEval(negate=True)
+        elif function == "covid_v2":
+            # Arguments for Covid simulator with updated parameterization
+            self.arm_map = self.covid_arms
+            self.num_arms = self.arm_map.shape[0]
+            self.context_map = CovidSimV2().context_samples
+            # Extreme design is the edges of the cube.
+            self.extreme_design = self.context_map[[0, 3, -4, -1]]
+            self.dim = CovidSimV2.dim
+            self.function = CovidSimV2(negate=True)
+            self.true_function = CovidEvalV2(negate=True)
         else:
             # Arguments for cancer simulator.
             raise NotImplementedError
@@ -142,12 +152,11 @@ class SimulatorWrapper:
         ).view(-1, self.dim)
         return self.function(X).view(-1, 1).to(**self.ckwargs)
 
+
 # These are the allowed algorithm names.
 labels = [
     "TS",
     "TS+",
-    "TS_full",
-    "TS+_full",
 ]
 
 
@@ -159,7 +168,6 @@ def main(
     simulator_name: str,
     rho_key: str = "mean",
     weights: Optional[Tensor] = None,
-    num_full_train: Optional[int] = None,
     input_dict: dict = None,  # this is for adding more iterations
     mode: Optional[str] = None,
     dtype: torch.dtype = torch.double,
@@ -173,14 +181,15 @@ def main(
     Args:
         num_total_samples: Total number of samples to use. Includes the initialization.
         seed: The seed to use for this replication.
-        label: This is the algorithm label, select from the list above.
+        label: This is the algorithm label, select from the list above. It also specifies
+            whether to use the full or extreme design, as well as the number of samples
+            to use for initialization.
+            structure as: <alg_name>_<f/e>_<num_train>
         output_path: The file path for saving the experiment output.
         simulator_name: The name of the simulator to use, "covid" or "cancer".
         rho_key: "mean" or "worst". Specifies the contextual PCS to use.
             contextual PCS. This is just an estimate, not the actual reported PCS.
         weights: The optional weights if using mean PCS.
-        num_full_train: Number of "full" training samples. Number of samples drawn
-            from each arm-context pair.
         input_dict: This is used if the experiment was terminated early and we want to
             continue from where we left off. The experiment will warm-start from here
             and continue up to a total number of `iterations`.
@@ -189,15 +198,16 @@ def main(
         dtype: Tensor data type to use.
         device: The device to use, "cpu" / "cuda".
     """
-    assert label in labels, "label not supported!"
+    split_label = label.split("_")
+    assert split_label[0] in labels, "label not supported!"
     torch.manual_seed(seed)
     np.random.seed(seed)
     ckwargs = {"dtype": dtype, "device": device}
     # get some defaults
-    num_full_train = num_full_train or 2
     if weights is not None:
         weights = torch.as_tensor(weights).view(-1)
-    use_full_design = "full" in label
+    use_full_design = split_label[1] == "f"
+    num_train = int(split_label[2])
 
     def rho(X: Tensor) -> Tensor:
         r"""Operates on -2 dimension. Dimension gets reduced by 1."""
@@ -223,10 +233,10 @@ def main(
     # get the evaluations for initialization.
     # sample from all designs / extreme designs
     active_design = context_map if use_full_design else simulator.extreme_design
-    samples_count = torch.full((num_arms, active_design.shape[0]), num_full_train, **ckwargs)
+    samples_count = torch.full((num_arms, active_design.shape[0]), num_train, **ckwargs)
     Y = torch.stack(
         [
-            (simulator.evaluate_all() if use_full_design else simulator.evaluate_extreme_design()).view_as(samples_count) for _ in range(num_full_train)
+            (simulator.evaluate_all() if use_full_design else simulator.evaluate_extreme_design()).view_as(samples_count) for _ in range(num_train)
         ]
     )
     # NOTE: Use Y.sum(dim=0) / samples_count to get the sample mean.
@@ -250,6 +260,7 @@ def main(
     # set some counters etc for keeping track of things
     start = time()
     correct_selection = torch.zeros(0, num_contexts, **ckwargs)
+    samples_count_all = samples_count.unsqueeze(0).clone()
     wall_time = torch.zeros(0, **ckwargs)
     if input_dict is not None:
         # read the given output file and continue from there.
@@ -257,7 +268,8 @@ def main(
         if mode == "-a":
             # adding iterations to existing output
             assert input_dict["label"] == label
-            samples_count = input_dict["samples_count"]
+            samples_count_all = input_dict["samples_count_all"]
+            samples_count = samples_count_all[-1]
             if samples_count.sum() >= num_total_samples:
                 raise ValueError("Existing output has as many or more samples!")
             correct_selection = input_dict["correct_selection"]
@@ -303,11 +315,16 @@ def main(
         correct_selection = torch.cat([correct_selection, (tm_maximizers == maximizers).unsqueeze(0)])
         wall_time = torch.cat([wall_time, torch.tensor([time() - start], **ckwargs)])
 
+        samples_count_all = torch.cat(
+            [samples_count_all, samples_count.unsqueeze(0)], dim=0,
+        )
+
         # save the output periodically.
         # can be used to restart in case of an error.
         rho_cs = rho(correct_selection.unsqueeze(-1)).squeeze(-1)
         output_dict = {
             "label": label,
+            "samples_count_all": samples_count_all,
             "Y": Y,
             "true_means": true_means,
             "correct_selection": correct_selection,
@@ -321,6 +338,7 @@ def main(
 
     output_dict = {
         "label": label,
+        "samples_count_all": samples_count_all,
         "Y": Y,
         "true_means": true_means,
         "correct_selection": correct_selection,
@@ -347,7 +365,7 @@ def submitit_main(
     exp_dir = path.join(current_dir, config)
     config_path = path.join(exp_dir, "config.json")
     seed = int(seed)
-    output_path = path.join(exp_dir, f"{str(seed).zfill(4)}_{label}.pt")
+    output_path = path.join(exp_dir, label.split("_")[0], f"{str(seed).zfill(4)}_{label}.pt")
     input_dict = None
     mode = None
     if path.exists(output_path):
@@ -373,9 +391,7 @@ def submitit_main(
             quit()
     with open(config_path, "r") as f:
         kwargs = json.load(f)
-        # if label == "ML_IKG":
-        #     kwargs["iterations"] = min(kwargs["iterations"], 1000)
-    for key in ["fit_frequency", "use_full_train"]:
+    for key in ["fit_frequency"]:
         kwargs.pop(key, None)
     output = main(
         seed=seed,
