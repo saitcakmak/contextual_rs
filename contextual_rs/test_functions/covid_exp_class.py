@@ -22,6 +22,11 @@ output_store_v2 = os.path.join(
     "covid_simulators",
     "stored_simulations_v2.pt",
 )
+eval_store_v2 = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "covid_simulators",
+    "stored_evals_v2.pt",
+)
 MAX_SEED = 30
 
 
@@ -330,6 +335,40 @@ class CovidSimV2(CovidSim):
     dim_w: int = 2
     dim: int = 4
 
+    def __init__(
+        self,
+        num_tests: int = 10000,
+        replications: int = 1,
+        time_horizon: int = 14,
+        sim_params: dict = None,
+        negate: bool = False,
+        alpha: float = 0.0,
+    ) -> None:
+        """
+        Initialize the problem with given number of populations.
+        The decision variables (x) will be `num_pop - 1` dimensional
+        Here the context is taken as the initial_prevalence
+
+        Args:
+            num_tests: Number of daily available testing capacity
+            replications: Number of replications for each solution
+            time_horizon: Time horizon of the simulation
+            sim_params: Modifications to base params if needed
+            negate: If True, output is negated
+            alpha: The variance reduction coefficient. With `y` denoting the
+                output, variance reduction is achieved by returning
+                `y + alpha (E[y] - y)`.
+                In order to use this, the outputs must be stored.
+        """
+        super(CovidSimV2, self).__init__(
+            num_tests=num_tests,
+            replications=replications,
+            time_horizon=time_horizon,
+            sim_params=sim_params,
+            negate=negate,
+        )
+        self.alpha = alpha
+
     def forward(self, X: Tensor, run_seed: int = None) -> Tensor:
         """
         Calls the simulator and returns the total number of infections.
@@ -356,6 +395,8 @@ class CovidSimV2(CovidSim):
             )
         if X.device.type == "cuda":
             return self(X.cpu()).to(X)
+        if self.alpha:
+            return self.stored_forward(X, run_seed)
         out_size = X.size()[:-1] + (1,)
         X = X.reshape(-1, 1, self.dim)
         if X.shape[0] > 1:
@@ -442,6 +483,55 @@ class CovidSimV2(CovidSim):
         torch.random.set_rng_state(torch_state)
         return out.reshape(out_size)
 
+    def stored_forward(self, X: Tensor, run_seed: int = None) -> Tensor:
+        r"""Reads the stored outputs, applies variance reduction and retuns the results.
+
+        Args:
+            X: `n x dim` or `n x 1 x dim`-dim tensor of solutions. Denotes the
+                proportion of samples allocated to first two populations and
+                the exposed infection probability and contacts per day.
+            run_seed: Seed for evaluation - typically None and randomized.
+                If evaluating multiple X with seed specified, they will share it.
+                If None, they will have different randomly drawn seeds.
+                If specified, it should be an integer from [1, MAX_SEED].
+
+        Returns:
+            An `n [x 1] x 1`-dim tensor of total number of infections.
+        """
+        output_dict = torch.load(output_store_v2)
+        eval_dict = torch.load(eval_store_v2)
+        output = torch.empty(X.shape[:-1] + (1,))
+        if run_seed:
+            seeds = torch.full(X.shape[0], run_seed)
+        else:
+            seeds = torch.randint(low=1, high=MAX_SEED + 1, size=(X.shape[0],))
+        for i, x_ in enumerate(X):
+            y = output_dict[(tuple(x_.flatten().tolist()), int(seeds[i]))]
+            eval_y = eval_dict[tuple(x_.flatten().tolist())]
+            output[i] = y + self.alpha * (eval_y - y)
+        return -output if self.negate else output
+
 
 class CovidEvalV2(CovidEval, CovidSimV2):
-    pass
+
+    def stored_forward(self, X: Tensor, run_seed: int = None) -> Tensor:
+        r"""Reads the stored evaluations and returns the result.
+        Faster than the forward call if all outputs are known to be stored.
+
+        Args:
+            X: `n x dim` or `n x 1 x dim`-dim tensor of solutions. Denotes the
+                proportion of samples allocated to first two populations and
+                the exposed infection probability and contacts per day.
+            run_seed: Must be None
+
+        Returns:
+            An `n [x 1] x 1`-dim tensor of total number of infections.
+        """
+        if run_seed is not None:
+            raise ValueError
+        eval_dict = torch.load(eval_store_v2)
+        output = torch.empty(X.shape[:-1] + (1,))
+        for i, x_ in enumerate(X):
+            eval_y = eval_dict[tuple(x_.flatten().tolist())]
+            output[i] = eval_y
+        return -output if self.negate else output
