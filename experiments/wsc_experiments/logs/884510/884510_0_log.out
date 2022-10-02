@@ -1,0 +1,7 @@
+submitit INFO (2022-10-02 13:20:44,316) - Starting with JobEnvironment(job_id=884510, hostname=nikola-compute-03.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 13:20:44,316) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884510/884510_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 26, iteration 1970, time: 1631.5838570594788
+Starting label LEVI, seed 26, iteration 1980, time: 1653.821623802185
+Starting label LEVI, seed 26, iteration 1990, time: 1666.0881867408752
+submitit INFO (2022-10-02 13:21:32,503) - Job completed successfully

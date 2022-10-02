@@ -1,0 +1,4 @@
+slurmstepd: error: *** JOB 883256 ON coecis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***
+slurmstepd: error: *** STEP 883256.0 ON coecis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***
+submitit WARNING (2022-10-02 00:55:52,180) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 00:55:52,180) - Bypassing signal SIGCONT

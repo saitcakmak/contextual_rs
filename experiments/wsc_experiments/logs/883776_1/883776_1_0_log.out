@@ -1,0 +1,29 @@
+submitit INFO (2022-10-02 03:16:25,256) - Starting with JobEnvironment(job_id=883776_1, hostname=sablab-gpu-06.ece.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 03:16:25,256) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883776_1/883776_1_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 32, iteration 370, time: 1570.7533931732178
+Starting label LEVI, seed 32, iteration 380, time: 1574.4625144004822
+Starting label LEVI, seed 32, iteration 390, time: 1577.9269337654114
+Starting label LEVI, seed 32, iteration 400, time: 1581.4649403095245
+Starting label LEVI, seed 32, iteration 410, time: 1584.5470774173737
+Starting label LEVI, seed 32, iteration 420, time: 1587.8877592086792
+Starting label LEVI, seed 32, iteration 430, time: 1591.4426317214966
+Starting label LEVI, seed 32, iteration 440, time: 1595.000128030777
+Starting label LEVI, seed 32, iteration 450, time: 1598.1813066005707
+Starting label LEVI, seed 32, iteration 460, time: 1601.8017764091492
+Starting label LEVI, seed 32, iteration 470, time: 1605.3988842964172
+Starting label LEVI, seed 32, iteration 480, time: 1609.0655286312103
+Starting label LEVI, seed 32, iteration 490, time: 1612.6084632873535
+Starting label LEVI, seed 32, iteration 500, time: 1616.4061052799225
+Starting label LEVI, seed 32, iteration 510, time: 1620.4015529155731
+Starting label LEVI, seed 32, iteration 520, time: 1624.1908102035522
+Starting label LEVI, seed 32, iteration 530, time: 1627.7911429405212
+submitit WARNING (2022-10-02 03:17:24,748) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 03:17:24,759) - Bypassing signal SIGTERM
+Starting label LEVI, seed 32, iteration 540, time: 1631.5065596103668
+Starting label LEVI, seed 32, iteration 550, time: 1635.5634977817535
+Starting label LEVI, seed 32, iteration 560, time: 1639.5194127559662
+Starting label LEVI, seed 32, iteration 570, time: 1642.8555512428284
+Starting label LEVI, seed 32, iteration 580, time: 1646.7926921844482
+Starting label LEVI, seed 32, iteration 590, time: 1650.8516454696655
+Starting label LEVI, seed 32, iteration 600, time: 1654.5268423557281

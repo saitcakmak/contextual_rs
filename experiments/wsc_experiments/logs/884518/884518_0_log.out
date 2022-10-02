@@ -1,0 +1,48 @@
+submitit INFO (2022-10-02 13:21:14,490) - Starting with JobEnvironment(job_id=884518, hostname=nikola-compute-03.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 13:21:14,490) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884518/884518_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 56, iteration 1560, time: 3875.1139545440674
+Starting label LEVI, seed 56, iteration 1570, time: 3883.7557203769684
+Starting label LEVI, seed 56, iteration 1580, time: 3892.119457960129
+Starting label LEVI, seed 56, iteration 1590, time: 3900.4902958869934
+Starting label LEVI, seed 56, iteration 1600, time: 3908.6440398693085
+Starting label LEVI, seed 56, iteration 1610, time: 3917.0040035247803
+Starting label LEVI, seed 56, iteration 1620, time: 3925.2857344150543
+Starting label LEVI, seed 56, iteration 1630, time: 3933.8748683929443
+Starting label LEVI, seed 56, iteration 1640, time: 3942.598425388336
+Starting label LEVI, seed 56, iteration 1650, time: 3951.0896837711334
+Starting label LEVI, seed 56, iteration 1660, time: 3959.957943916321
+Starting label LEVI, seed 56, iteration 1670, time: 3968.671064376831
+Starting label LEVI, seed 56, iteration 1680, time: 3977.4069674015045
+Starting label LEVI, seed 56, iteration 1690, time: 3985.7259764671326
+Starting label LEVI, seed 56, iteration 1700, time: 3994.0488681793213
+Starting label LEVI, seed 56, iteration 1710, time: 4002.2644698619843
+Starting label LEVI, seed 56, iteration 1720, time: 4010.326005458832
+Starting label LEVI, seed 56, iteration 1730, time: 4018.3749718666077
+Starting label LEVI, seed 56, iteration 1740, time: 4026.345395565033
+Starting label LEVI, seed 56, iteration 1750, time: 4034.785761117935
+Starting label LEVI, seed 56, iteration 1760, time: 4043.15576171875
+Starting label LEVI, seed 56, iteration 1770, time: 4051.159298181534
+Starting label LEVI, seed 56, iteration 1780, time: 4059.2711248397827
+Starting label LEVI, seed 56, iteration 1790, time: 4067.503690481186
+Starting label LEVI, seed 56, iteration 1800, time: 4075.6645658016205
+Starting label LEVI, seed 56, iteration 1810, time: 4084.104248523712
+Starting label LEVI, seed 56, iteration 1820, time: 4092.5727009773254
+Starting label LEVI, seed 56, iteration 1830, time: 4101.075745105743
+Starting label LEVI, seed 56, iteration 1840, time: 4109.639267921448
+Starting label LEVI, seed 56, iteration 1850, time: 4118.203799962997
+Starting label LEVI, seed 56, iteration 1860, time: 4126.860980510712
+Starting label LEVI, seed 56, iteration 1870, time: 4135.312247514725
+Starting label LEVI, seed 56, iteration 1880, time: 4143.939805269241
+Starting label LEVI, seed 56, iteration 1890, time: 4152.631476640701
+Starting label LEVI, seed 56, iteration 1900, time: 4161.145447015762
+Starting label LEVI, seed 56, iteration 1910, time: 4169.487017869949
+Starting label LEVI, seed 56, iteration 1920, time: 4177.741991281509
+Starting label LEVI, seed 56, iteration 1930, time: 4185.93612909317
+Starting label LEVI, seed 56, iteration 1940, time: 4194.269850969315
+Starting label LEVI, seed 56, iteration 1950, time: 4202.65246629715
+Starting label LEVI, seed 56, iteration 1960, time: 4211.26433801651
+Starting label LEVI, seed 56, iteration 1970, time: 4220.364589929581
+Starting label LEVI, seed 56, iteration 1980, time: 4229.138116598129
+Starting label LEVI, seed 56, iteration 1990, time: 4237.95085477829
+submitit INFO (2022-10-02 13:27:27,772) - Job completed successfully

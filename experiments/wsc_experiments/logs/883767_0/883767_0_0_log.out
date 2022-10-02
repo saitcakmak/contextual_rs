@@ -1,0 +1,26 @@
+submitit INFO (2022-10-02 03:16:16,031) - Starting with JobEnvironment(job_id=883767_0, hostname=nikola-compute-04.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 03:16:16,032) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883767_0/883767_0_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 21, iteration 710, time: 1662.4153068065643
+Starting label LEVI, seed 21, iteration 720, time: 1667.351661682129
+Starting label LEVI, seed 21, iteration 730, time: 1671.5144917964935
+Starting label LEVI, seed 21, iteration 740, time: 1675.524442434311
+Starting label LEVI, seed 21, iteration 750, time: 1679.7671015262604
+Starting label LEVI, seed 21, iteration 760, time: 1683.8511652946472
+Starting label LEVI, seed 21, iteration 770, time: 1688.3574030399323
+Starting label LEVI, seed 21, iteration 780, time: 1693.1933133602142
+Starting label LEVI, seed 21, iteration 790, time: 1697.2720875740051
+Starting label LEVI, seed 21, iteration 800, time: 1701.97975564003
+Starting label LEVI, seed 21, iteration 810, time: 1706.448565006256
+Starting label LEVI, seed 21, iteration 820, time: 1711.0019800662994
+Starting label LEVI, seed 21, iteration 830, time: 1715.527855873108
+Starting label LEVI, seed 21, iteration 840, time: 1720.0551369190216
+Starting label LEVI, seed 21, iteration 850, time: 1724.3904447555542
+submitit WARNING (2022-10-02 03:17:24,812) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 03:17:24,814) - Bypassing signal SIGTERM
+Starting label LEVI, seed 21, iteration 860, time: 1729.5229110717773
+Starting label LEVI, seed 21, iteration 870, time: 1734.1890552043915
+Starting label LEVI, seed 21, iteration 880, time: 1738.8822224140167
+Starting label LEVI, seed 21, iteration 890, time: 1743.7970118522644
+Starting label LEVI, seed 21, iteration 900, time: 1748.8806710243225
+Starting label LEVI, seed 21, iteration 910, time: 1753.8355963230133

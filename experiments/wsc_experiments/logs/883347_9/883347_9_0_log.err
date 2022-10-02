@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 883347 ON sablab-gpu-02 CANCELLED AT 2022-10-02T01:22:36 ***
+slurmstepd: error: *** STEP 883347.0 ON sablab-gpu-02 CANCELLED AT 2022-10-02T01:22:36 ***
+submitit WARNING (2022-10-02 01:22:36,176) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 01:22:36,176) - Bypassing signal SIGCONT

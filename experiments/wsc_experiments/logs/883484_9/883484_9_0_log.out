@@ -1,0 +1,31 @@
+submitit INFO (2022-10-02 01:47:36,073) - Starting with JobEnvironment(job_id=883484_9, hostname=sablab-gpu-06.ece.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:47:36,073) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883484_9/883484_9_submitted.pkl
+Starting label LEVI, seed 99, iteration 0, time: 0.002653837203979492
+Starting label LEVI, seed 99, iteration 10, time: 4.921884059906006
+Starting label LEVI, seed 99, iteration 20, time: 9.840659856796265
+Starting label LEVI, seed 99, iteration 30, time: 15.468256711959839
+Starting label LEVI, seed 99, iteration 40, time: 20.369390726089478
+Starting label LEVI, seed 99, iteration 50, time: 24.626378059387207
+Starting label LEVI, seed 99, iteration 60, time: 28.684008598327637
+Starting label LEVI, seed 99, iteration 70, time: 33.006370067596436
+Starting label LEVI, seed 99, iteration 80, time: 37.13216805458069
+Starting label LEVI, seed 99, iteration 90, time: 41.35990238189697
+Starting label LEVI, seed 99, iteration 100, time: 45.73355269432068
+Starting label LEVI, seed 99, iteration 110, time: 49.989500761032104
+Starting label LEVI, seed 99, iteration 120, time: 54.489084005355835
+Starting label LEVI, seed 99, iteration 130, time: 58.96041250228882
+Starting label LEVI, seed 99, iteration 140, time: 63.54096984863281
+Starting label LEVI, seed 99, iteration 150, time: 68.27710008621216
+Starting label LEVI, seed 99, iteration 160, time: 73.06895852088928
+Starting label LEVI, seed 99, iteration 170, time: 77.72067213058472
+Starting label LEVI, seed 99, iteration 180, time: 82.59637832641602
+Starting label LEVI, seed 99, iteration 190, time: 87.31913757324219
+Starting label LEVI, seed 99, iteration 200, time: 92.15022039413452
+Starting label LEVI, seed 99, iteration 210, time: 98.16389918327332
+Starting label LEVI, seed 99, iteration 220, time: 104.32575035095215
+submitit WARNING (2022-10-02 01:49:22,434) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:49:22,437) - Bypassing signal SIGTERM
+Starting label LEVI, seed 99, iteration 230, time: 110.56155753135681
+Starting label LEVI, seed 99, iteration 240, time: 116.43837356567383
+Starting label LEVI, seed 99, iteration 250, time: 122.57248830795288
+Starting label LEVI, seed 99, iteration 260, time: 129.07907795906067

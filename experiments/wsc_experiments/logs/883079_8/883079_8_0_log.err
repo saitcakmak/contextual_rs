@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+submitit WARNING (2022-10-02 00:02:24,220) - Bypassing signal SIGCONT
+slurmstepd: error: *** STEP 883092.0 ON campbell-compute-01 CANCELLED AT 2022-10-02T00:02:24 ***
+submitit WARNING (2022-10-02 00:02:24,279) - Bypassing signal SIGTERM
+slurmstepd: error: *** JOB 883092 ON campbell-compute-01 CANCELLED AT 2022-10-02T00:02:24 ***

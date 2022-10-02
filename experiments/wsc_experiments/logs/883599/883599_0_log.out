@@ -1,0 +1,26 @@
+submitit INFO (2022-10-02 02:01:10,752) - Starting with JobEnvironment(job_id=883599, hostname=nikola-compute-03.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 02:01:10,752) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883599/883599_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 55, iteration 960, time: 1690.2147376537323
+Starting label LEVI, seed 55, iteration 970, time: 1693.755152463913
+Starting label LEVI, seed 55, iteration 980, time: 1696.8535208702087
+Starting label LEVI, seed 55, iteration 990, time: 1700.0096225738525
+Starting label LEVI, seed 55, iteration 1000, time: 1703.3145837783813
+Starting label LEVI, seed 55, iteration 1010, time: 1706.3502275943756
+Starting label LEVI, seed 55, iteration 1020, time: 1709.5970640182495
+Starting label LEVI, seed 55, iteration 1030, time: 1712.7326302528381
+Starting label LEVI, seed 55, iteration 1040, time: 1715.8360347747803
+Starting label LEVI, seed 55, iteration 1050, time: 1719.1365909576416
+Starting label LEVI, seed 55, iteration 1060, time: 1722.6015989780426
+Starting label LEVI, seed 55, iteration 1070, time: 1726.1269726753235
+submitit WARNING (2022-10-02 02:01:49,553) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 02:01:49,556) - Bypassing signal SIGTERM
+Starting label LEVI, seed 55, iteration 1080, time: 1729.558863401413
+Starting label LEVI, seed 55, iteration 1090, time: 1733.0339274406433
+Starting label LEVI, seed 55, iteration 1100, time: 1736.4839174747467
+Starting label LEVI, seed 55, iteration 1110, time: 1739.867998600006
+Starting label LEVI, seed 55, iteration 1120, time: 1743.3552360534668
+Starting label LEVI, seed 55, iteration 1130, time: 1746.818933725357
+Starting label LEVI, seed 55, iteration 1140, time: 1750.4460458755493
+Starting label LEVI, seed 55, iteration 1150, time: 1754.0290851593018
+Starting label LEVI, seed 55, iteration 1160, time: 1757.4653646945953

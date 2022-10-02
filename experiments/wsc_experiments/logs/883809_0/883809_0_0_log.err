@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 03:17:24,770) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883810 ON g2-compute-94 CANCELLED AT 2022-10-02T03:17:24 ***
+slurmstepd: error: *** STEP 883810.0 ON g2-compute-94 CANCELLED AT 2022-10-02T03:17:24 ***
+submitit WARNING (2022-10-02 03:17:24,771) - Bypassing signal SIGTERM

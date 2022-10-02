@@ -1,0 +1,52 @@
+submitit INFO (2022-10-02 04:15:34,459) - Starting with JobEnvironment(job_id=884045_6, hostname=lecun.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 04:15:34,459) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884045_6/884045_6_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 67, iteration 900, time: 450.8905553817749
+Starting label LEVI, seed 67, iteration 910, time: 558.5527031421661
+Starting label LEVI, seed 67, iteration 920, time: 629.8572945594788
+Starting label LEVI, seed 67, iteration 930, time: 727.7266399860382
+Starting label LEVI, seed 67, iteration 940, time: 819.5426902770996
+Starting label LEVI, seed 67, iteration 950, time: 928.8048787117004
+Starting label LEVI, seed 67, iteration 960, time: 1018.0177385807037
+Starting label LEVI, seed 67, iteration 970, time: 1117.9142475128174
+Starting label LEVI, seed 67, iteration 980, time: 1225.3895745277405
+Starting label LEVI, seed 67, iteration 990, time: 1340.1240818500519
+Starting label LEVI, seed 67, iteration 1000, time: 1445.5603699684143
+Starting label LEVI, seed 67, iteration 1010, time: 1550.7522249221802
+Starting label LEVI, seed 67, iteration 1020, time: 1653.5043132305145
+Starting label LEVI, seed 67, iteration 1030, time: 1752.4942419528961
+Starting label LEVI, seed 67, iteration 1040, time: 1855.1486630439758
+Starting label LEVI, seed 67, iteration 1050, time: 1959.6073133945465
+Starting label LEVI, seed 67, iteration 1060, time: 2060.8071167469025
+Starting label LEVI, seed 67, iteration 1070, time: 2162.901460647583
+Starting label LEVI, seed 67, iteration 1080, time: 2266.127440214157
+Starting label LEVI, seed 67, iteration 1090, time: 2371.0139293670654
+Starting label LEVI, seed 67, iteration 1100, time: 2481.5407860279083
+Starting label LEVI, seed 67, iteration 1110, time: 2593.2195727825165
+Starting label LEVI, seed 67, iteration 1120, time: 2707.734931707382
+Starting label LEVI, seed 67, iteration 1130, time: 2808.22030711174
+Starting label LEVI, seed 67, iteration 1140, time: 2908.5235557556152
+Starting label LEVI, seed 67, iteration 1150, time: 3008.869084596634
+Starting label LEVI, seed 67, iteration 1160, time: 3110.6876044273376
+Starting label LEVI, seed 67, iteration 1170, time: 3139.790974855423
+Starting label LEVI, seed 67, iteration 1180, time: 3148.1128194332123
+Starting label LEVI, seed 67, iteration 1190, time: 3155.5035214424133
+Starting label LEVI, seed 67, iteration 1200, time: 3170.7857270240784
+Starting label LEVI, seed 67, iteration 1210, time: 3178.22381234169
+Starting label LEVI, seed 67, iteration 1220, time: 3185.981305360794
+Starting label LEVI, seed 67, iteration 1230, time: 3194.104633331299
+Starting label LEVI, seed 67, iteration 1240, time: 3201.4240934848785
+Starting label LEVI, seed 67, iteration 1250, time: 3209.496007204056
+Starting label LEVI, seed 67, iteration 1260, time: 3217.519203186035
+Starting label LEVI, seed 67, iteration 1270, time: 3286.124091863632
+Starting label LEVI, seed 67, iteration 1280, time: 3325.740854024887
+Starting label LEVI, seed 67, iteration 1290, time: 3427.921462535858
+Starting label LEVI, seed 67, iteration 1300, time: 3529.2055089473724
+Starting label LEVI, seed 67, iteration 1310, time: 3641.7449889183044
+Starting label LEVI, seed 67, iteration 1320, time: 3757.2918887138367
+Starting label LEVI, seed 67, iteration 1330, time: 3861.540013074875
+submitit INFO (2022-10-02 05:13:39,927) - Job has timed out. Ran 58 minutes out of requested 60 minutes.
+submitit WARNING (2022-10-02 05:13:39,933) - Caught signal SIGUSR2 on lecun.cs.cornell.edu: this job is timed-out.
+submitit INFO (2022-10-02 05:13:39,933) - Job not requeued because: timed-out and not checkpointable.
+submitit WARNING (2022-10-02 05:13:39,933) - Bypassing signal SIGCONT
+submitit ERROR (2022-10-02 05:13:39,999) - Submitted job triggered an exception

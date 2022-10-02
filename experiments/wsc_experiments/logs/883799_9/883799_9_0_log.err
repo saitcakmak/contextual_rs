@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 03:17:24,817) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883799 ON scaglione-compute-01 CANCELLED AT 2022-10-02T03:17:24 ***
+slurmstepd: error: *** STEP 883799.0 ON scaglione-compute-01 CANCELLED AT 2022-10-02T03:17:24 ***
+submitit WARNING (2022-10-02 03:17:24,912) - Bypassing signal SIGTERM

@@ -1,0 +1,111 @@
+submitit WARNING (2022-10-02 14:24:41,696) - Caught signal SIGUSR2 on sablab-gpu-07.ece.cornell.edu: this job is timed-out.
+submitit WARNING (2022-10-02 14:24:41,696) - Bypassing signal SIGCONT
+submitit ERROR (2022-10-02 14:24:41,727) - Submitted job triggered an exception
+Traceback (most recent call last):
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/utils/dispatcher.py", line 88, in __call__
+    return func(*args, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 320, in _fit_multioutput_independent
+    raise MDNotImplementedError  # defer to generic
+multipledispatch.dispatcher.MDNotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/_submit.py", line 11, in <module>
+    submitit_main()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 72, in submitit_main
+    process_job(args.folder)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 65, in process_job
+    raise error
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 54, in process_job
+    result = delayed.result()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/utils.py", line 133, in result
+    self._result = self.function(*self.args, **self.kwargs)
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 567, in submitit_main
+    output = main(
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 386, in main
+    model = fit_modellist(X, Y, num_arms)
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 176, in fit_modellist
+    fit_gpytorch_model(mll)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 170, in fit_gpytorch_model
+    mll = fit_gpytorch_mll(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 114, in fit_gpytorch_mll
+    return dispatcher(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/utils/dispatcher.py", line 95, in __call__
+    return func(*args, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 240, in _fit_fallback
+    mll, _ = optimizer(mll, **optimizer_kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/fit.py", line 142, in fit_gpytorch_scipy
+    res = minimize(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_minimize.py", line 619, in minimize
+    return _minimize_lbfgsb(fun, x0, args, jac, bounds,
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 360, in _minimize_lbfgsb
+    f, g = func_and_grad(x)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 260, in fun_and_grad
+    self._update_fun()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 226, in _update_fun
+    self._update_fun_impl()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 133, in update_fun
+    self.f = fun_wrapped(self.x)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 130, in fun_wrapped
+    return fun(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 74, in __call__
+    self._compute_if_needed(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 68, in _compute_if_needed
+    fg = self.fun(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/utils.py", line 227, in _scipy_objective_and_grad
+    return _handle_numerical_errors(error=e, x=x)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/utils.py", line 256, in _handle_numerical_errors
+    raise error  # pragma: nocover
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/utils.py", line 225, in _scipy_objective_and_grad
+    loss = -mll(*args).sum()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/module.py", line 30, in __call__
+    outputs = self.forward(*inputs, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/mlls/exact_marginal_log_likelihood.py", line 64, in forward
+    res = output.log_prob(target)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/distributions/multivariate_normal.py", line 147, in log_prob
+    return super().log_prob(value)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/torch/distributions/multivariate_normal.py", line 212, in log_prob
+    M = _batch_mahalanobis(self._unbroadcasted_scale_tril, diff)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/distributions/multivariate_normal.py", line 57, in _unbroadcasted_scale_tril
+    ust = to_dense(self.lazy_covariance_matrix.cholesky())
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/operators/_linear_operator.py", line 1227, in cholesky
+    chol = self._cholesky(upper=False)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/utils/memoize.py", line 59, in g
+    return _add_to_cache(self, cache_name, method(self, *args, **kwargs), *args, kwargs_pkl=kwargs_pkl)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/operators/_linear_operator.py", line 471, in _cholesky
+    evaluated_kern_mat = self.evaluate_kernel()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/operators/added_diag_linear_operator.py", line 191, in evaluate_kernel
+    added_diag_linear_op = self.representation_tree()(*self.representation())
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/operators/_linear_operator.py", line 1938, in representation_tree
+    return LinearOperatorRepresentationTree(self)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/linear_operator/operators/linear_operator_representation_tree.py", line 13, in __init__
+    representation_size = len(arg.representation())
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/lazy/lazy_evaluated_kernel_tensor.py", line 370, in representation
+    return self.evaluate_kernel().representation()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/utils/memoize.py", line 59, in g
+    return _add_to_cache(self, cache_name, method(self, *args, **kwargs), *args, kwargs_pkl=kwargs_pkl)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/lazy/lazy_evaluated_kernel_tensor.py", line 329, in evaluate_kernel
+    res = self.kernel(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/kernel.py", line 408, in __call__
+    super(Kernel, self).__call__(x1_, x2_, last_dim_is_batch=last_dim_is_batch, **params)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/module.py", line 30, in __call__
+    outputs = self.forward(*inputs, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/scale_kernel.py", line 109, in forward
+    orig_output = self.base_kernel.forward(x1, x2, diag=diag, last_dim_is_batch=last_dim_is_batch, **params)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/matern_kernel.py", line 99, in forward
+    distance = self.covar_dist(x1_, x2_, diag=diag, **params)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/kernel.py", line 338, in covar_dist
+    res = self.distance_module._dist(x1, x2, postprocess, x1_eq_x2)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/kernel.py", line 57, in _dist
+    res = self._sq_dist(x1, x2, postprocess=False, x1_eq_x2=x1_eq_x2)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/gpytorch/kernels/kernel.py", line 46, in _sq_dist
+    res = x1_.matmul(x2_.transpose(-2, -1))
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/job_environment.py", line 226, in checkpoint_and_try_requeue
+    raise utils.UncompletedJobError(message)
+submitit.core.utils.UncompletedJobError: Job not requeued because: timed-out and not checkpointable.
+srun: error: sablab-gpu-07: task 0: Exited with exit code 1

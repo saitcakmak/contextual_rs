@@ -1,0 +1,31 @@
+submitit INFO (2022-10-02 14:53:25,853) - Starting with JobEnvironment(job_id=884648, hostname=joachims-compute-02.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 14:53:25,853) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884648/884648_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 8, iteration 1730, time: 3817.2855656147003
+Starting label LEVI, seed 8, iteration 1740, time: 3829.218155145645
+Starting label LEVI, seed 8, iteration 1750, time: 3842.759134054184
+Starting label LEVI, seed 8, iteration 1760, time: 3855.9992151260376
+Starting label LEVI, seed 8, iteration 1770, time: 3869.29531621933
+Starting label LEVI, seed 8, iteration 1780, time: 3883.064017057419
+Starting label LEVI, seed 8, iteration 1790, time: 3897.39635014534
+Starting label LEVI, seed 8, iteration 1800, time: 3907.8345572948456
+Starting label LEVI, seed 8, iteration 1810, time: 3921.431307554245
+Starting label LEVI, seed 8, iteration 1820, time: 3933.2902705669403
+Starting label LEVI, seed 8, iteration 1830, time: 3945.126182794571
+Starting label LEVI, seed 8, iteration 1840, time: 3958.574133872986
+Starting label LEVI, seed 8, iteration 1850, time: 3972.4093039035797
+Starting label LEVI, seed 8, iteration 1860, time: 3986.4651021957397
+Starting label LEVI, seed 8, iteration 1870, time: 3999.0955839157104
+Starting label LEVI, seed 8, iteration 1880, time: 4012.8761620521545
+Starting label LEVI, seed 8, iteration 1890, time: 4023.7480368614197
+Starting label LEVI, seed 8, iteration 1900, time: 4039.9754345417023
+Starting label LEVI, seed 8, iteration 1910, time: 4051.4948585033417
+Starting label LEVI, seed 8, iteration 1920, time: 4066.5472235679626
+Starting label LEVI, seed 8, iteration 1930, time: 4081.3366544246674
+Starting label LEVI, seed 8, iteration 1940, time: 4095.59104180336
+Starting label LEVI, seed 8, iteration 1950, time: 4111.206391334534
+Starting label LEVI, seed 8, iteration 1960, time: 4124.386839151382
+Starting label LEVI, seed 8, iteration 1970, time: 4136.391173362732
+Starting label LEVI, seed 8, iteration 1980, time: 4151.887928247452
+Starting label LEVI, seed 8, iteration 1990, time: 4163.579676628113
+submitit INFO (2022-10-02 14:59:31,003) - Job completed successfully

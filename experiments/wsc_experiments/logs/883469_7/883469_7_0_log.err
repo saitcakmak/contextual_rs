@@ -1,0 +1,5 @@
+slurmstepd: error: *** STEP 883477.0 ON davis-compute-01 CANCELLED AT 2022-10-02T01:34:27 DUE TO PREEMPTION ***
+slurmstepd: error: *** JOB 883477 ON davis-compute-01 CANCELLED AT 2022-10-02T01:34:27 DUE TO PREEMPTION ***
+submitit WARNING (2022-10-02 01:34:27,820) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 01:34:27,821) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:34:27,871) - Bypassing signal SIGTERM

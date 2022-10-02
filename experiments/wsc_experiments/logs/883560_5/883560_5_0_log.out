@@ -1,0 +1,18 @@
+submitit INFO (2022-10-02 01:50:19,519) - Starting with JobEnvironment(job_id=883560_5, hostname=lecun.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:50:19,519) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883560_5/883560_5_submitted.pkl
+Starting label LEVI, seed 45, iteration 0, time: 0.020676851272583008
+Starting label LEVI, seed 45, iteration 10, time: 37.97654151916504
+Starting label LEVI, seed 45, iteration 20, time: 57.830618143081665
+Starting label LEVI, seed 45, iteration 30, time: 65.90248942375183
+Starting label LEVI, seed 45, iteration 40, time: 70.9229531288147
+Starting label LEVI, seed 45, iteration 50, time: 76.02560949325562
+Starting label LEVI, seed 45, iteration 60, time: 81.61803841590881
+Starting label LEVI, seed 45, iteration 70, time: 87.9696843624115
+Starting label LEVI, seed 45, iteration 80, time: 94.34347224235535
+Starting label LEVI, seed 45, iteration 90, time: 100.94561982154846
+Starting label LEVI, seed 45, iteration 100, time: 152.66750168800354
+Starting label LEVI, seed 45, iteration 110, time: 208.23460602760315
+Starting label LEVI, seed 45, iteration 120, time: 233.84887146949768
+Starting label LEVI, seed 45, iteration 130, time: 286.8182039260864
+submitit WARNING (2022-10-02 01:55:12,481) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:55:12,550) - Bypassing signal SIGTERM

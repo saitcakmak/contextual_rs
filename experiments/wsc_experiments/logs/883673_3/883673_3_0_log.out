@@ -1,0 +1,10 @@
+submitit INFO (2022-10-02 02:23:53,631) - Starting with JobEnvironment(job_id=883673_3, hostname=campbell-compute-01.mae.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 02:23:53,631) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883673_3/883673_3_submitted.pkl
+Starting label LEVI, seed 83, iteration 0, time: 0.015060663223266602
+Starting label LEVI, seed 83, iteration 10, time: 2.913130760192871
+submitit WARNING (2022-10-02 02:24:01,434) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 02:24:01,435) - Bypassing signal SIGTERM
+Starting label LEVI, seed 83, iteration 20, time: 5.668325662612915
+Starting label LEVI, seed 83, iteration 30, time: 11.310241937637329
+Starting label LEVI, seed 83, iteration 40, time: 19.44393253326416
+Starting label LEVI, seed 83, iteration 50, time: 35.477577924728394

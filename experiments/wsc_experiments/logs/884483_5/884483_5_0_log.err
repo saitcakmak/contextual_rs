@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 13:13:37,451) - Bypassing signal SIGCONT
+slurmstepd: error: *** STEP 884489.0 ON belongie-compute-01 CANCELLED AT 2022-10-02T13:13:37 ***
+submitit WARNING (2022-10-02 13:13:37,507) - Bypassing signal SIGTERM
+slurmstepd: error: *** JOB 884489 ON belongie-compute-01 CANCELLED AT 2022-10-02T13:13:37 ***

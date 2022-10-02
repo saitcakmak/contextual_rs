@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+submitit WARNING (2022-10-02 00:55:52,108) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883262 ON lecun CANCELLED AT 2022-10-02T00:55:52 ***
+slurmstepd: error: *** STEP 883262.0 ON lecun CANCELLED AT 2022-10-02T00:55:52 ***
+submitit WARNING (2022-10-02 00:55:52,165) - Bypassing signal SIGTERM

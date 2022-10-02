@@ -1,0 +1,19 @@
+submitit INFO (2022-10-02 01:22:15,809) - Starting with JobEnvironment(job_id=883391_5, hostname=tripods-compute-02.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:22:15,809) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883391_5/883391_5_submitted.pkl
+Starting label LEVI, seed 85, iteration 0, time: 0.005742788314819336
+Starting label LEVI, seed 85, iteration 10, time: 3.245053768157959
+Starting label LEVI, seed 85, iteration 20, time: 6.446394443511963
+Starting label LEVI, seed 85, iteration 30, time: 9.62729287147522
+Starting label LEVI, seed 85, iteration 40, time: 12.729896783828735
+Starting label LEVI, seed 85, iteration 50, time: 15.652119398117065
+submitit WARNING (2022-10-02 01:22:36,056) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:22:36,140) - Bypassing signal SIGTERM
+Starting label LEVI, seed 85, iteration 60, time: 19.02270817756653
+Starting label LEVI, seed 85, iteration 70, time: 22.264044284820557
+Starting label LEVI, seed 85, iteration 80, time: 25.522067070007324
+Starting label LEVI, seed 85, iteration 90, time: 28.849318027496338
+Starting label LEVI, seed 85, iteration 100, time: 32.098681926727295
+Starting label LEVI, seed 85, iteration 110, time: 35.18883442878723
+Starting label LEVI, seed 85, iteration 120, time: 38.533555030822754
+Starting label LEVI, seed 85, iteration 130, time: 41.91505169868469
+Starting label LEVI, seed 85, iteration 140, time: 45.45489287376404

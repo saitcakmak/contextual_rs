@@ -1,0 +1,4 @@
+slurmstepd: error: *** STEP 883268.0 ON lecun CANCELLED AT 2022-10-02T00:55:52 ***
+submitit WARNING (2022-10-02 00:55:52,145) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 00:55:52,146) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883268 ON lecun CANCELLED AT 2022-10-02T00:55:52 ***

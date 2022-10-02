@@ -1,0 +1,56 @@
+submitit INFO (2022-10-02 03:22:36,175) - Starting with JobEnvironment(job_id=883884_2, hostname=sablab-gpu-11.ece.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 03:22:36,176) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883884_2/883884_2_submitted.pkl
+Starting label LEVI, seed 92, iteration 0, time: 0.010860919952392578
+Starting label LEVI, seed 92, iteration 10, time: 3.1798946857452393
+Starting label LEVI, seed 92, iteration 20, time: 5.898193359375
+Starting label LEVI, seed 92, iteration 30, time: 8.673009872436523
+Starting label LEVI, seed 92, iteration 40, time: 11.463032960891724
+Starting label LEVI, seed 92, iteration 50, time: 14.24241304397583
+Starting label LEVI, seed 92, iteration 60, time: 17.073047399520874
+Starting label LEVI, seed 92, iteration 70, time: 19.785457134246826
+Starting label LEVI, seed 92, iteration 80, time: 22.623749017715454
+Starting label LEVI, seed 92, iteration 90, time: 25.435555458068848
+Starting label LEVI, seed 92, iteration 100, time: 28.238195419311523
+Starting label LEVI, seed 92, iteration 110, time: 31.05941367149353
+Starting label LEVI, seed 92, iteration 120, time: 33.86872410774231
+Starting label LEVI, seed 92, iteration 130, time: 36.73683428764343
+Starting label LEVI, seed 92, iteration 140, time: 39.681355237960815
+Starting label LEVI, seed 92, iteration 150, time: 42.54158926010132
+Starting label LEVI, seed 92, iteration 160, time: 45.39326572418213
+Starting label LEVI, seed 92, iteration 170, time: 48.23250699043274
+Starting label LEVI, seed 92, iteration 180, time: 51.22075057029724
+Starting label LEVI, seed 92, iteration 190, time: 54.35289645195007
+Starting label LEVI, seed 92, iteration 200, time: 57.527921199798584
+Starting label LEVI, seed 92, iteration 210, time: 60.683319091796875
+Starting label LEVI, seed 92, iteration 220, time: 64.09025168418884
+Starting label LEVI, seed 92, iteration 230, time: 67.3083987236023
+Starting label LEVI, seed 92, iteration 240, time: 70.71529936790466
+Starting label LEVI, seed 92, iteration 250, time: 74.02701449394226
+Starting label LEVI, seed 92, iteration 260, time: 77.0309374332428
+Starting label LEVI, seed 92, iteration 270, time: 80.35948371887207
+Starting label LEVI, seed 92, iteration 280, time: 83.53412127494812
+Starting label LEVI, seed 92, iteration 290, time: 86.64016461372375
+Starting label LEVI, seed 92, iteration 300, time: 89.70670485496521
+Starting label LEVI, seed 92, iteration 310, time: 92.86454105377197
+Starting label LEVI, seed 92, iteration 320, time: 95.99646782875061
+Starting label LEVI, seed 92, iteration 330, time: 99.4507257938385
+Starting label LEVI, seed 92, iteration 340, time: 102.90725493431091
+Starting label LEVI, seed 92, iteration 350, time: 106.33030319213867
+Starting label LEVI, seed 92, iteration 360, time: 109.56242060661316
+Starting label LEVI, seed 92, iteration 370, time: 112.83210706710815
+Starting label LEVI, seed 92, iteration 380, time: 116.09155368804932
+Starting label LEVI, seed 92, iteration 390, time: 119.46331429481506
+Starting label LEVI, seed 92, iteration 400, time: 122.6826422214508
+Starting label LEVI, seed 92, iteration 410, time: 126.07708930969238
+Starting label LEVI, seed 92, iteration 420, time: 129.53494429588318
+submitit WARNING (2022-10-02 03:24:53,520) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 03:24:53,580) - Bypassing signal SIGTERM
+Starting label LEVI, seed 92, iteration 430, time: 132.7982316017151
+Starting label LEVI, seed 92, iteration 440, time: 136.16154503822327
+Starting label LEVI, seed 92, iteration 450, time: 139.64431929588318
+Starting label LEVI, seed 92, iteration 460, time: 142.99737405776978
+Starting label LEVI, seed 92, iteration 470, time: 146.4450490474701
+Starting label LEVI, seed 92, iteration 480, time: 149.92666172981262
+Starting label LEVI, seed 92, iteration 490, time: 153.45186018943787
+Starting label LEVI, seed 92, iteration 500, time: 157.04331278800964
+Starting label LEVI, seed 92, iteration 510, time: 160.72875595092773

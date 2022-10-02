@@ -1,0 +1,69 @@
+submitit WARNING (2022-10-02 14:25:11,727) - Caught signal SIGUSR2 on lecun.cs.cornell.edu: this job is timed-out.
+submitit WARNING (2022-10-02 14:25:11,727) - Bypassing signal SIGCONT
+submitit ERROR (2022-10-02 14:25:11,746) - Submitted job triggered an exception
+Traceback (most recent call last):
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/utils/dispatcher.py", line 88, in __call__
+    return func(*args, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 320, in _fit_multioutput_independent
+    raise MDNotImplementedError  # defer to generic
+multipledispatch.dispatcher.MDNotImplementedError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/_submit.py", line 11, in <module>
+    submitit_main()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 72, in submitit_main
+    process_job(args.folder)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 65, in process_job
+    raise error
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/submission.py", line 54, in process_job
+    result = delayed.result()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/utils.py", line 133, in result
+    self._result = self.function(*self.args, **self.kwargs)
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 567, in submitit_main
+    output = main(
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 386, in main
+    model = fit_modellist(X, Y, num_arms)
+  File "/home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/main.py", line 176, in fit_modellist
+    fit_gpytorch_model(mll)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 170, in fit_gpytorch_model
+    mll = fit_gpytorch_mll(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 114, in fit_gpytorch_mll
+    return dispatcher(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/utils/dispatcher.py", line 95, in __call__
+    return func(*args, **kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/fit.py", line 240, in _fit_fallback
+    mll, _ = optimizer(mll, **optimizer_kwargs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/fit.py", line 142, in fit_gpytorch_scipy
+    res = minimize(
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_minimize.py", line 619, in minimize
+    return _minimize_lbfgsb(fun, x0, args, jac, bounds,
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/lbfgsb.py", line 360, in _minimize_lbfgsb
+    f, g = func_and_grad(x)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 260, in fun_and_grad
+    self._update_fun()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 226, in _update_fun
+    self._update_fun_impl()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 133, in update_fun
+    self.f = fun_wrapped(self.x)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/_differentiable_functions.py", line 130, in fun_wrapped
+    return fun(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 74, in __call__
+    self._compute_if_needed(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 68, in _compute_if_needed
+    fg = self.fun(x, *args)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/botorch/optim/utils.py", line 228, in _scipy_objective_and_grad
+    loss.backward()
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/torch/_tensor.py", line 396, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph, inputs=inputs)
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/torch/autograd/__init__.py", line 173, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/home/gid-cakmaks/anaconda3/envs/contextual_rs/lib/python3.8/site-packages/submitit/core/job_environment.py", line 226, in checkpoint_and_try_requeue
+    raise utils.UncompletedJobError(message)
+submitit.core.utils.UncompletedJobError: Job not requeued because: timed-out and not checkpointable.
+srun: error: lecun: task 0: Exited with exit code 1

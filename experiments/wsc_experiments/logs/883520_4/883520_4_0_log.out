@@ -1,0 +1,56 @@
+submitit INFO (2022-10-02 01:49:55,861) - Starting with JobEnvironment(job_id=883520_4, hostname=nikola-compute-02.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:49:55,861) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883520_4/883520_4_submitted.pkl
+Starting label LEVI, seed 4, iteration 0, time: 0.007220029830932617
+Starting label LEVI, seed 4, iteration 10, time: 8.614884376525879
+Starting label LEVI, seed 4, iteration 20, time: 14.165884733200073
+Starting label LEVI, seed 4, iteration 30, time: 19.643831729888916
+Starting label LEVI, seed 4, iteration 40, time: 25.45199179649353
+Starting label LEVI, seed 4, iteration 50, time: 31.331252098083496
+Starting label LEVI, seed 4, iteration 60, time: 36.927069664001465
+Starting label LEVI, seed 4, iteration 70, time: 42.617865324020386
+Starting label LEVI, seed 4, iteration 80, time: 48.53173041343689
+Starting label LEVI, seed 4, iteration 90, time: 54.63613486289978
+Starting label LEVI, seed 4, iteration 100, time: 60.696041107177734
+Starting label LEVI, seed 4, iteration 110, time: 66.70961546897888
+Starting label LEVI, seed 4, iteration 120, time: 72.81554961204529
+Starting label LEVI, seed 4, iteration 130, time: 78.38129210472107
+Starting label LEVI, seed 4, iteration 140, time: 84.15876936912537
+Starting label LEVI, seed 4, iteration 150, time: 90.11909699440002
+Starting label LEVI, seed 4, iteration 160, time: 96.25900101661682
+Starting label LEVI, seed 4, iteration 170, time: 102.5018150806427
+Starting label LEVI, seed 4, iteration 180, time: 108.81450700759888
+Starting label LEVI, seed 4, iteration 190, time: 115.13159275054932
+Starting label LEVI, seed 4, iteration 200, time: 121.20871090888977
+Starting label LEVI, seed 4, iteration 210, time: 127.302072763443
+Starting label LEVI, seed 4, iteration 220, time: 133.5334358215332
+Starting label LEVI, seed 4, iteration 230, time: 139.70668029785156
+Starting label LEVI, seed 4, iteration 240, time: 145.82924222946167
+Starting label LEVI, seed 4, iteration 250, time: 151.92380475997925
+Starting label LEVI, seed 4, iteration 260, time: 158.30896759033203
+Starting label LEVI, seed 4, iteration 270, time: 164.89958095550537
+Starting label LEVI, seed 4, iteration 280, time: 171.41391897201538
+Starting label LEVI, seed 4, iteration 290, time: 177.69367098808289
+Starting label LEVI, seed 4, iteration 300, time: 184.27577996253967
+Starting label LEVI, seed 4, iteration 310, time: 190.78493285179138
+Starting label LEVI, seed 4, iteration 320, time: 197.39421558380127
+Starting label LEVI, seed 4, iteration 330, time: 204.16630339622498
+Starting label LEVI, seed 4, iteration 340, time: 210.7470784187317
+Starting label LEVI, seed 4, iteration 350, time: 217.31016373634338
+Starting label LEVI, seed 4, iteration 360, time: 224.2664635181427
+Starting label LEVI, seed 4, iteration 370, time: 231.22126364707947
+Starting label LEVI, seed 4, iteration 380, time: 238.29275250434875
+Starting label LEVI, seed 4, iteration 390, time: 245.04866576194763
+Starting label LEVI, seed 4, iteration 400, time: 253.2028787136078
+Starting label LEVI, seed 4, iteration 410, time: 261.2075343132019
+Starting label LEVI, seed 4, iteration 420, time: 269.54747009277344
+Starting label LEVI, seed 4, iteration 430, time: 277.0859353542328
+Starting label LEVI, seed 4, iteration 440, time: 285.23548412323
+Starting label LEVI, seed 4, iteration 450, time: 294.27010846138
+Starting label LEVI, seed 4, iteration 460, time: 302.07455706596375
+Starting label LEVI, seed 4, iteration 470, time: 309.23501467704773
+submitit WARNING (2022-10-02 01:55:12,448) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:55:12,453) - Bypassing signal SIGTERM
+Starting label LEVI, seed 4, iteration 480, time: 317.41616439819336
+Starting label LEVI, seed 4, iteration 490, time: 326.4064486026764
+Starting label LEVI, seed 4, iteration 500, time: 334.20360350608826
+Starting label LEVI, seed 4, iteration 510, time: 342.0190179347992

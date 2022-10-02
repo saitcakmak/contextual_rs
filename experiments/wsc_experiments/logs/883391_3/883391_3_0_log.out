@@ -1,0 +1,26 @@
+submitit INFO (2022-10-02 01:22:03,868) - Starting with JobEnvironment(job_id=883391_3, hostname=nikola-compute-04.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:22:03,868) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883391_3/883391_3_submitted.pkl
+Starting label LEVI, seed 83, iteration 0, time: 0.0005269050598144531
+Starting label LEVI, seed 83, iteration 10, time: 2.808213710784912
+Starting label LEVI, seed 83, iteration 20, time: 5.482669353485107
+Starting label LEVI, seed 83, iteration 30, time: 8.154255628585815
+Starting label LEVI, seed 83, iteration 40, time: 10.860792398452759
+Starting label LEVI, seed 83, iteration 50, time: 13.564900636672974
+Starting label LEVI, seed 83, iteration 60, time: 16.443744897842407
+Starting label LEVI, seed 83, iteration 70, time: 19.296998262405396
+Starting label LEVI, seed 83, iteration 80, time: 22.21217370033264
+Starting label LEVI, seed 83, iteration 90, time: 25.078081369400024
+Starting label LEVI, seed 83, iteration 100, time: 27.93578338623047
+submitit WARNING (2022-10-02 01:22:35,992) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:22:36,048) - Bypassing signal SIGTERM
+Starting label LEVI, seed 83, iteration 110, time: 30.70426368713379
+Starting label LEVI, seed 83, iteration 120, time: 33.48059844970703
+Starting label LEVI, seed 83, iteration 130, time: 36.26979660987854
+Starting label LEVI, seed 83, iteration 140, time: 39.18089461326599
+Starting label LEVI, seed 83, iteration 150, time: 41.94994616508484
+Starting label LEVI, seed 83, iteration 160, time: 44.77118420600891
+Starting label LEVI, seed 83, iteration 170, time: 47.6474974155426
+Starting label LEVI, seed 83, iteration 180, time: 50.46706819534302
+Starting label LEVI, seed 83, iteration 190, time: 53.279550313949585
+Starting label LEVI, seed 83, iteration 200, time: 56.10877752304077
+Starting label LEVI, seed 83, iteration 210, time: 58.95574617385864

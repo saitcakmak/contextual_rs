@@ -1,0 +1,33 @@
+submitit INFO (2022-10-02 02:00:40,068) - Starting with JobEnvironment(job_id=883596_0, hostname=nikola-compute-03.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 02:00:40,068) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883596_0/883596_0_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 26, iteration 1080, time: 1775.2793326377869
+Starting label LEVI, seed 26, iteration 1090, time: 1778.867375612259
+Starting label LEVI, seed 26, iteration 1100, time: 1782.2232491970062
+Starting label LEVI, seed 26, iteration 1110, time: 1785.5461666584015
+Starting label LEVI, seed 26, iteration 1120, time: 1788.7628955841064
+Starting label LEVI, seed 26, iteration 1130, time: 1791.960096359253
+Starting label LEVI, seed 26, iteration 1140, time: 1795.2240476608276
+Starting label LEVI, seed 26, iteration 1150, time: 1798.393137216568
+Starting label LEVI, seed 26, iteration 1160, time: 1801.6116206645966
+Starting label LEVI, seed 26, iteration 1170, time: 1805.0068793296814
+Starting label LEVI, seed 26, iteration 1180, time: 1808.2529513835907
+Starting label LEVI, seed 26, iteration 1190, time: 1811.5223503112793
+Starting label LEVI, seed 26, iteration 1200, time: 1814.9246892929077
+Starting label LEVI, seed 26, iteration 1210, time: 1818.369684457779
+Starting label LEVI, seed 26, iteration 1220, time: 1821.8381674289703
+Starting label LEVI, seed 26, iteration 1230, time: 1825.2977175712585
+Starting label LEVI, seed 26, iteration 1240, time: 1828.6900188922882
+Starting label LEVI, seed 26, iteration 1250, time: 1832.0236310958862
+Starting label LEVI, seed 26, iteration 1260, time: 1835.5397148132324
+Starting label LEVI, seed 26, iteration 1270, time: 1839.0964143276215
+submitit WARNING (2022-10-02 02:01:49,552) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 02:01:49,554) - Bypassing signal SIGTERM
+Starting label LEVI, seed 26, iteration 1280, time: 1842.666116476059
+Starting label LEVI, seed 26, iteration 1290, time: 1846.39515376091
+Starting label LEVI, seed 26, iteration 1300, time: 1850.183081626892
+Starting label LEVI, seed 26, iteration 1310, time: 1853.8698148727417
+Starting label LEVI, seed 26, iteration 1320, time: 1857.4999001026154
+Starting label LEVI, seed 26, iteration 1330, time: 1861.0039796829224
+Starting label LEVI, seed 26, iteration 1340, time: 1864.6206109523773
+Starting label LEVI, seed 26, iteration 1350, time: 1868.2116041183472

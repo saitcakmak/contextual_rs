@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 01:55:12,525) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883548 ON hariharan-compute-02 CANCELLED AT 2022-10-02T01:55:12 ***
+slurmstepd: error: *** STEP 883548.0 ON hariharan-compute-02 CANCELLED AT 2022-10-02T01:55:12 ***
+submitit WARNING (2022-10-02 01:55:12,626) - Bypassing signal SIGTERM

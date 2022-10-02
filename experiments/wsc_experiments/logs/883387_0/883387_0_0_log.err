@@ -1,0 +1,4 @@
+slurmstepd: error: *** STEP 883388.0 ON campbell-compute-01 CANCELLED AT 2022-10-02T01:22:36 ***
+submitit WARNING (2022-10-02 01:22:36,144) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 01:22:36,144) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883388 ON campbell-compute-01 CANCELLED AT 2022-10-02T01:22:36 ***

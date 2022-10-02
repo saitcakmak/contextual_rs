@@ -1,0 +1,43 @@
+submitit INFO (2022-10-02 04:15:34,459) - Starting with JobEnvironment(job_id=884045_5, hostname=lecun.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 04:15:34,459) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884045_5/884045_5_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 66, iteration 1610, time: 689.7431633472443
+Starting label LEVI, seed 66, iteration 1620, time: 698.3235201835632
+Starting label LEVI, seed 66, iteration 1630, time: 705.0898334980011
+Starting label LEVI, seed 66, iteration 1640, time: 712.0438075065613
+Starting label LEVI, seed 66, iteration 1650, time: 719.0006349086761
+Starting label LEVI, seed 66, iteration 1660, time: 725.9623010158539
+Starting label LEVI, seed 66, iteration 1670, time: 732.7291629314423
+Starting label LEVI, seed 66, iteration 1680, time: 739.7273721694946
+Starting label LEVI, seed 66, iteration 1690, time: 746.8073978424072
+Starting label LEVI, seed 66, iteration 1700, time: 753.6096632480621
+Starting label LEVI, seed 66, iteration 1710, time: 760.5269043445587
+Starting label LEVI, seed 66, iteration 1720, time: 767.4001405239105
+Starting label LEVI, seed 66, iteration 1730, time: 774.8261826038361
+Starting label LEVI, seed 66, iteration 1740, time: 781.7973313331604
+Starting label LEVI, seed 66, iteration 1750, time: 788.8399484157562
+Starting label LEVI, seed 66, iteration 1760, time: 796.2728579044342
+Starting label LEVI, seed 66, iteration 1770, time: 803.3518159389496
+Starting label LEVI, seed 66, iteration 1780, time: 810.0370121002197
+Starting label LEVI, seed 66, iteration 1790, time: 817.1832802295685
+Starting label LEVI, seed 66, iteration 1800, time: 823.829295873642
+Starting label LEVI, seed 66, iteration 1810, time: 830.6029877662659
+Starting label LEVI, seed 66, iteration 1820, time: 839.1372923851013
+Starting label LEVI, seed 66, iteration 1830, time: 845.916286945343
+Starting label LEVI, seed 66, iteration 1840, time: 852.9145047664642
+Starting label LEVI, seed 66, iteration 1850, time: 859.9192521572113
+Starting label LEVI, seed 66, iteration 1860, time: 866.82550573349
+Starting label LEVI, seed 66, iteration 1870, time: 873.5691907405853
+Starting label LEVI, seed 66, iteration 1880, time: 880.5386898517609
+Starting label LEVI, seed 66, iteration 1890, time: 887.7990374565125
+Starting label LEVI, seed 66, iteration 1900, time: 894.7165246009827
+Starting label LEVI, seed 66, iteration 1910, time: 901.7902972698212
+Starting label LEVI, seed 66, iteration 1920, time: 908.7469911575317
+Starting label LEVI, seed 66, iteration 1930, time: 915.8017973899841
+Starting label LEVI, seed 66, iteration 1940, time: 922.8371183872223
+Starting label LEVI, seed 66, iteration 1950, time: 929.9974324703217
+Starting label LEVI, seed 66, iteration 1960, time: 937.0685572624207
+Starting label LEVI, seed 66, iteration 1970, time: 944.6104199886322
+Starting label LEVI, seed 66, iteration 1980, time: 952.2756910324097
+Starting label LEVI, seed 66, iteration 1990, time: 960.3992578983307
+submitit INFO (2022-10-02 04:20:15,100) - Job completed successfully

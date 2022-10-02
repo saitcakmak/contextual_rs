@@ -1,0 +1,29 @@
+submitit INFO (2022-10-02 04:15:34,956) - Starting with JobEnvironment(job_id=884045_2, hostname=snavely-compute-01.tech.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 04:15:34,957) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884045_2/884045_2_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 63, iteration 1750, time: 1303.8529694080353
+Starting label LEVI, seed 63, iteration 1760, time: 1314.1145055294037
+Starting label LEVI, seed 63, iteration 1770, time: 1325.0539734363556
+Starting label LEVI, seed 63, iteration 1780, time: 1335.1788609027863
+Starting label LEVI, seed 63, iteration 1790, time: 1345.3650076389313
+Starting label LEVI, seed 63, iteration 1800, time: 1355.4285922050476
+Starting label LEVI, seed 63, iteration 1810, time: 1365.538688659668
+Starting label LEVI, seed 63, iteration 1820, time: 1375.6898703575134
+Starting label LEVI, seed 63, iteration 1830, time: 1385.523755311966
+Starting label LEVI, seed 63, iteration 1840, time: 1395.7102138996124
+Starting label LEVI, seed 63, iteration 1850, time: 1406.281832933426
+Starting label LEVI, seed 63, iteration 1860, time: 1416.3260037899017
+Starting label LEVI, seed 63, iteration 1870, time: 1426.2612614631653
+Starting label LEVI, seed 63, iteration 1880, time: 1436.3405497074127
+Starting label LEVI, seed 63, iteration 1890, time: 1446.1618790626526
+Starting label LEVI, seed 63, iteration 1900, time: 1456.3461391925812
+Starting label LEVI, seed 63, iteration 1910, time: 1466.5078043937683
+Starting label LEVI, seed 63, iteration 1920, time: 1476.4620769023895
+Starting label LEVI, seed 63, iteration 1930, time: 1486.5172324180603
+Starting label LEVI, seed 63, iteration 1940, time: 1496.3172960281372
+Starting label LEVI, seed 63, iteration 1950, time: 1505.9115464687347
+Starting label LEVI, seed 63, iteration 1960, time: 1515.2852408885956
+Starting label LEVI, seed 63, iteration 1970, time: 1525.0872275829315
+Starting label LEVI, seed 63, iteration 1980, time: 1535.0992937088013
+Starting label LEVI, seed 63, iteration 1990, time: 1545.154013633728
+submitit INFO (2022-10-02 04:19:51,284) - Job completed successfully

@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 00:55:52,032) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883255 ON sablab-gpu-02 CANCELLED AT 2022-10-02T00:55:52 ***
+slurmstepd: error: *** STEP 883255.0 ON sablab-gpu-02 CANCELLED AT 2022-10-02T00:55:52 ***
+submitit WARNING (2022-10-02 00:55:52,300) - Bypassing signal SIGTERM

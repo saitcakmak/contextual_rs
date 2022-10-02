@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 03:22:27,525) - Bypassing signal SIGCONT
+slurmstepd: error: *** STEP 883839.0 ON nikola-compute-03 CANCELLED AT 2022-10-02T03:22:27 ***
+submitit WARNING (2022-10-02 03:22:27,543) - Bypassing signal SIGTERM
+slurmstepd: error: *** JOB 883839 ON nikola-compute-03 CANCELLED AT 2022-10-02T03:22:27 ***

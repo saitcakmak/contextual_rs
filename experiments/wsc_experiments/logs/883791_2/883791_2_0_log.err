@@ -1,0 +1,4 @@
+submitit WARNING (2022-10-02 03:17:24,863) - Bypassing signal SIGCONT
+slurmstepd: error: *** STEP 883794.0 ON snavely-compute-01 CANCELLED AT 2022-10-02T03:17:24 ***
+submitit WARNING (2022-10-02 03:17:24,906) - Bypassing signal SIGTERM
+slurmstepd: error: *** JOB 883794 ON snavely-compute-01 CANCELLED AT 2022-10-02T03:17:24 ***

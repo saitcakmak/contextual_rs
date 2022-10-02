@@ -1,0 +1,11 @@
+submitit INFO (2022-10-02 13:03:43,705) - Starting with JobEnvironment(job_id=884429_5, hostname=coecis-compute-01.coecis.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 13:03:43,706) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884429_5/884429_5_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 68, iteration 1350, time: 525.7721433639526
+Starting label LEVI, seed 68, iteration 1360, time: 537.280375957489
+Starting label LEVI, seed 68, iteration 1370, time: 548.0256021022797
+submitit WARNING (2022-10-02 13:04:12,298) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 13:04:12,434) - Bypassing signal SIGTERM
+Starting label LEVI, seed 68, iteration 1380, time: 559.0271992683411
+Starting label LEVI, seed 68, iteration 1390, time: 569.5267233848572
+Starting label LEVI, seed 68, iteration 1400, time: 579.8600835800171

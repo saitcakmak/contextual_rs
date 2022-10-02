@@ -1,0 +1,20 @@
+submitit INFO (2022-10-02 02:25:07,269) - Starting with JobEnvironment(job_id=883710_3, hostname=coecis-compute-01.coecis.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 02:25:07,269) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883710_3/883710_3_submitted.pkl
+Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
+Starting label LEVI, seed 53, iteration 1840, time: 1562.3165526390076
+Starting label LEVI, seed 53, iteration 1850, time: 1580.8696579933167
+Starting label LEVI, seed 53, iteration 1860, time: 1600.2853825092316
+Starting label LEVI, seed 53, iteration 1870, time: 1621.0999212265015
+Starting label LEVI, seed 53, iteration 1880, time: 1642.7709679603577
+Starting label LEVI, seed 53, iteration 1890, time: 1664.0811851024628
+Starting label LEVI, seed 53, iteration 1900, time: 1685.662267923355
+Starting label LEVI, seed 53, iteration 1910, time: 1713.7484004497528
+Starting label LEVI, seed 53, iteration 1920, time: 1736.5255777835846
+Starting label LEVI, seed 53, iteration 1930, time: 1762.4644012451172
+Starting label LEVI, seed 53, iteration 1940, time: 1777.5523245334625
+Starting label LEVI, seed 53, iteration 1950, time: 1801.2313213348389
+Starting label LEVI, seed 53, iteration 1960, time: 1821.8095202445984
+Starting label LEVI, seed 53, iteration 1970, time: 1843.3670473098755
+Starting label LEVI, seed 53, iteration 1980, time: 1869.5729494094849
+Starting label LEVI, seed 53, iteration 1990, time: 1894.260044336319
+submitit INFO (2022-10-02 02:31:09,698) - Job completed successfully

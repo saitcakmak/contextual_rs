@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+submitit WARNING (2022-10-02 02:24:01,440) - Bypassing signal SIGCONT
+slurmstepd: error: *** JOB 883663 ON badfellow CANCELLED AT 2022-10-02T02:24:01 ***
+slurmstepd: error: *** STEP 883663.0 ON badfellow CANCELLED AT 2022-10-02T02:24:01 ***
+submitit WARNING (2022-10-02 02:24:01,527) - Bypassing signal SIGTERM

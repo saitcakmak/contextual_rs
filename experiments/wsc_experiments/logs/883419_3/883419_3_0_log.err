@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 883424 ON snavely-compute-01 CANCELLED AT 2022-10-02T01:49:22 ***
+slurmstepd: error: *** STEP 883424.0 ON snavely-compute-01 CANCELLED AT 2022-10-02T01:49:22 ***
+submitit WARNING (2022-10-02 01:49:22,677) - Bypassing signal SIGTERM
+submitit WARNING (2022-10-02 01:49:22,677) - Bypassing signal SIGCONT

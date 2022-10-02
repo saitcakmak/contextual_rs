@@ -1,0 +1,5 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 883624 ON nikola-compute-04 CANCELLED AT 2022-10-02T02:24:01 ***
+submitit WARNING (2022-10-02 02:24:01,426) - Bypassing signal SIGCONT
+slurmstepd: error: *** STEP 883624.0 ON nikola-compute-04 CANCELLED AT 2022-10-02T02:24:01 ***
+submitit WARNING (2022-10-02 02:24:01,681) - Bypassing signal SIGTERM

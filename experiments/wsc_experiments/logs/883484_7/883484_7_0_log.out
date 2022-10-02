@@ -1,0 +1,39 @@
+submitit INFO (2022-10-02 01:46:49,049) - Starting with JobEnvironment(job_id=883484_7, hostname=rush-compute-01.tech.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:46:49,049) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883484_7/883484_7_submitted.pkl
+Starting label LEVI, seed 97, iteration 0, time: 0.0053784847259521484
+Starting label LEVI, seed 97, iteration 10, time: 4.289090871810913
+Starting label LEVI, seed 97, iteration 20, time: 8.736844301223755
+Starting label LEVI, seed 97, iteration 30, time: 13.219442367553711
+Starting label LEVI, seed 97, iteration 40, time: 17.63419795036316
+Starting label LEVI, seed 97, iteration 50, time: 21.98054337501526
+Starting label LEVI, seed 97, iteration 60, time: 26.31701350212097
+Starting label LEVI, seed 97, iteration 70, time: 30.534455060958862
+Starting label LEVI, seed 97, iteration 80, time: 34.81367468833923
+Starting label LEVI, seed 97, iteration 90, time: 39.48724699020386
+Starting label LEVI, seed 97, iteration 100, time: 44.27352285385132
+Starting label LEVI, seed 97, iteration 110, time: 49.199925661087036
+Starting label LEVI, seed 97, iteration 120, time: 54.402347803115845
+Starting label LEVI, seed 97, iteration 130, time: 59.469748735427856
+Starting label LEVI, seed 97, iteration 140, time: 64.77315306663513
+Starting label LEVI, seed 97, iteration 150, time: 69.94829368591309
+Starting label LEVI, seed 97, iteration 160, time: 75.2163393497467
+Starting label LEVI, seed 97, iteration 170, time: 80.84476709365845
+Starting label LEVI, seed 97, iteration 180, time: 86.5749089717865
+Starting label LEVI, seed 97, iteration 190, time: 92.2599585056305
+Starting label LEVI, seed 97, iteration 200, time: 98.15233540534973
+Starting label LEVI, seed 97, iteration 210, time: 103.98954772949219
+Starting label LEVI, seed 97, iteration 220, time: 109.81108522415161
+Starting label LEVI, seed 97, iteration 230, time: 115.8307032585144
+Starting label LEVI, seed 97, iteration 240, time: 121.87592887878418
+Starting label LEVI, seed 97, iteration 250, time: 127.78234648704529
+Starting label LEVI, seed 97, iteration 260, time: 133.5321877002716
+Starting label LEVI, seed 97, iteration 270, time: 139.38260102272034
+Starting label LEVI, seed 97, iteration 280, time: 145.37234807014465
+Starting label LEVI, seed 97, iteration 290, time: 151.1215214729309
+submitit WARNING (2022-10-02 01:49:22,525) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:49:22,597) - Bypassing signal SIGTERM
+Starting label LEVI, seed 97, iteration 300, time: 156.86862874031067
+Starting label LEVI, seed 97, iteration 310, time: 162.75688982009888
+Starting label LEVI, seed 97, iteration 320, time: 168.67441129684448
+Starting label LEVI, seed 97, iteration 330, time: 174.5417182445526
+Starting label LEVI, seed 97, iteration 340, time: 180.56612014770508

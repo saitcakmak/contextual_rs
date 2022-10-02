@@ -1,0 +1,36 @@
+submitit INFO (2022-10-02 01:21:28,719) - Starting with JobEnvironment(job_id=883391_2, hostname=nikola-compute-03.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-10-02 01:21:28,720) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883391_2/883391_2_submitted.pkl
+Starting label LEVI, seed 82, iteration 0, time: 0.0005233287811279297
+Starting label LEVI, seed 82, iteration 10, time: 2.863436698913574
+Starting label LEVI, seed 82, iteration 20, time: 5.670751333236694
+Starting label LEVI, seed 82, iteration 30, time: 8.454911947250366
+Starting label LEVI, seed 82, iteration 40, time: 11.261369705200195
+Starting label LEVI, seed 82, iteration 50, time: 14.007877111434937
+Starting label LEVI, seed 82, iteration 60, time: 16.798839807510376
+Starting label LEVI, seed 82, iteration 70, time: 19.625640392303467
+Starting label LEVI, seed 82, iteration 80, time: 22.546258211135864
+Starting label LEVI, seed 82, iteration 90, time: 25.50553250312805
+Starting label LEVI, seed 82, iteration 100, time: 28.319514989852905
+Starting label LEVI, seed 82, iteration 110, time: 31.13820791244507
+Starting label LEVI, seed 82, iteration 120, time: 34.08218431472778
+Starting label LEVI, seed 82, iteration 130, time: 37.02181077003479
+Starting label LEVI, seed 82, iteration 140, time: 40.01523566246033
+Starting label LEVI, seed 82, iteration 150, time: 43.189574003219604
+Starting label LEVI, seed 82, iteration 160, time: 46.20751929283142
+Starting label LEVI, seed 82, iteration 170, time: 49.26592230796814
+Starting label LEVI, seed 82, iteration 180, time: 52.40715503692627
+Starting label LEVI, seed 82, iteration 190, time: 55.42493271827698
+Starting label LEVI, seed 82, iteration 200, time: 58.43153786659241
+Starting label LEVI, seed 82, iteration 210, time: 61.60085868835449
+submitit WARNING (2022-10-02 01:22:36,052) - Bypassing signal SIGCONT
+submitit WARNING (2022-10-02 01:22:36,054) - Bypassing signal SIGTERM
+Starting label LEVI, seed 82, iteration 220, time: 64.69071698188782
+Starting label LEVI, seed 82, iteration 230, time: 67.81111192703247
+Starting label LEVI, seed 82, iteration 240, time: 70.85376715660095
+Starting label LEVI, seed 82, iteration 250, time: 73.98515319824219
+Starting label LEVI, seed 82, iteration 260, time: 77.15930366516113
+Starting label LEVI, seed 82, iteration 270, time: 80.286208152771
+Starting label LEVI, seed 82, iteration 280, time: 83.34520196914673
+Starting label LEVI, seed 82, iteration 290, time: 86.3900134563446
+Starting label LEVI, seed 82, iteration 300, time: 89.42741990089417
+Starting label LEVI, seed 82, iteration 310, time: 92.70120787620544
