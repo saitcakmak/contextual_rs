@@ -102,6 +102,8 @@ def gao_modellist(
     context_set: Tensor,
     randomize_ties: bool = True,
     infer_p: bool = False,
+    use_kde: bool = False,
+    kernel_scale: float = 2.0,
 ) -> Tuple[int, Tensor]:
     r"""
     Gao sampling strategy adapted to work with ModelListGP by replacing
@@ -114,11 +116,15 @@ def gao_modellist(
     Args:
         model: A ModelListGP where each model corresponds to a different arm.
         context_set: The set of contexts to consider. `num_contexts x d_c`.
-        randomize_ties: If there are multiple maximizers of Z, pick the
+        randomize_ties: If there are multiple minimizers of Z, pick the
             returned one randomly.
         infer_p: This is an experimental feature. If True, the ratio of samples
             allocated to a given alternative `p` is inferred from the ratio of
             the prior and posterior variances. Doesn't work well!
+        use_kde: This is an experimental feature. If True, a kernel density
+            estimator is used to approximate the `p`.
+        kernel_scale: The coefficient used to scale the distances before computing
+            the densities. Only relevant if using KDE.
 
     Returns:
         The maximizer arm and the corresponding context.
@@ -146,7 +152,7 @@ def gao_modellist(
             minimizer = min_idcs[
                 torch.randint(min_count, (1,), device=hat_Z.device)
             ].squeeze()
-    min_context = minimizer // (num_arms - 1)
+    min_context = torch.div(minimizer, num_arms-1, rounding_mode='floor')
     next_context = context_set[min_context]
     min_sorted_arm = minimizer % (num_arms - 1)
     # part 2 b) - train_counts stands in for the p_values
@@ -159,6 +165,25 @@ def gao_modellist(
         ]
         ratio = torch.cat(prior_variances) / variances[min_context]
         y_vals = ratio / variances[min_context]
+    elif use_kde:
+        # We need the distance to all the observations.
+        # From that distance, we can calculate the weights.
+        # Using those weights, we can get some p hat for any given arm context.
+
+        # The calculations are independent across arms.
+        # For each arm, we need to do to computation for all contexts.
+        # If this works and we try continuous, then we can do for the given context.
+        train_inputs = model.train_inputs
+        weighted_counts = torch.zeros(num_arms).to(context_set)
+        for i, arm_inputs in enumerate(train_inputs):
+            arm_inputs = arm_inputs[0]
+            # # of obs x 1
+            distances = torch.cdist(arm_inputs, next_context.unsqueeze(0))
+            densities = torch.exp(-kernel_scale*distances)
+            # Then we can sum it over the observations to get the distance weighted
+            # observation count for the context.
+            weighted_counts[i] = densities.sum(dim=0)
+        y_vals = weighted_counts / variances[min_context]
     else:
         train_inputs = model.train_inputs
         train_counts = torch.zeros(num_arms).to(context_set)
@@ -365,5 +390,3 @@ def sur_modellist(
         next_arm = max_arm
         next_context = context_set[min_max_list[1][1]]
     return next_arm, next_context
-
-
