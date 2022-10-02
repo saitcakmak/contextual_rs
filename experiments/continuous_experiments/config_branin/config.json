@@ -1,0 +1,7 @@
+{
+    "iterations": 1000,
+    "fit_frequency": 10,
+    "num_arms": 10,
+    "num_eval_contexts": 1024,
+    "ground_truth_kwargs": {"function": "branin"}
+}
