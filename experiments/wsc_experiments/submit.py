@@ -18,7 +18,7 @@ executor = submitit.AutoExecutor(folder=log_folder)
 # specify the sbatch options
 
 executor.update_parameters(
-    slurm_partition="default_gpu",
+    slurm_partition="gpu",
     timeout_min=60,
     nodes=1,
     # ntasks=1,
@@ -27,6 +27,7 @@ executor.update_parameters(
     # gres="gpu:1",
     gpus_per_node=1,
     mem_gb=16,
+    wckey="",
 )
 
 # # to submit batches of jobs
