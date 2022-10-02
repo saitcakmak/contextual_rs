@@ -35,6 +35,7 @@ from contextual_rs.finite_ikg import (
 from contextual_rs.generalized_pcs import (
     estimate_current_generalized_pcs,
 )
+from contextual_rs.levi import discrete_levi
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
 
 
@@ -180,10 +181,12 @@ def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
 labels = [
     "ML_IKG",
     "ML_Gao",
+    "ML_Gao_kde",
     "Li",
     "Gao",
     "SUR_simple",
     "SUR_fantasy",
+    "LEVI",
 ]
 
 
@@ -362,7 +365,7 @@ def main(
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
-        if "ML" in label or "SUR" in label:
+        if "ML" in label or "SUR" in label or "LEVI" in label:
             # using a ModelListGP
             if (i - existing_iterations) % fit_frequency != 0:
                 # append the last evaluations to the model with low cost updates.
@@ -410,12 +413,22 @@ def main(
                         context_map,
                         randomize_ties,
                         infer_p="infer_p" in label,
+                        use_kde="kde" in label,
+                        kernel_scale=1.0,
                     )
                 next_point = torch.cat(
                     [torch.tensor([next_arm], **ckwargs), next_context]
                 ).view(1, -1)
             else:
                 raise NotImplementedError
+        elif "LEVI" in label:
+            next_arm, next_context = discrete_levi(
+                model=model,
+                context_set=context_map,
+            )
+            next_point = torch.cat(
+                [torch.tensor([next_arm], **ckwargs), next_context]
+            ).view(1, -1)
         elif "SUR" in label:
             with torch.no_grad():
                 next_arm, next_context = sur_modellist(
@@ -438,7 +451,7 @@ def main(
             next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
         # get the next evaluation
-        if label == "ML_Gao" or "SUR" in label:
+        if "ML_Gao" in label or "SUR" in label or "LEVI" in label:
             next_eval = ground_truth.evaluate(next_arm, next_context.view(1, -1))
         else:
             next_eval = ground_truth.evaluate_w_index(next_arm, next_context)
@@ -460,7 +473,7 @@ def main(
 
         # check for correct selection for empirical PCS
         # This is for the actual reported PCS.
-        if "ML" in label or "SUR" in label:
+        if "ML" in label or "SUR" in label or "LEVI" in label:
             post_mean = model.posterior(context_map).mean.t()
         else:
             post_mean = model.means
