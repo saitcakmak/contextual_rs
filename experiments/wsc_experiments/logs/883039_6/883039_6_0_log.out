@@ -1,3 +1,0 @@
-submitit INFO (2022-10-01 23:36:05,175) - Starting with JobEnvironment(job_id=883039_6, hostname=sablab-gpu-03.ece.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-10-01 23:36:05,175) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883039_6/883039_6_submitted.pkl
-Starting label LEVI, seed 16, iteration 0, time: 0.00016736984252929688

@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 00:55:52,023) - Bypassing signal SIGCONT
-slurmstepd: error: *** STEP 883313.0 ON davis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***
-submitit WARNING (2022-10-02 00:55:52,123) - Bypassing signal SIGTERM
-slurmstepd: error: *** JOB 883313 ON davis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***

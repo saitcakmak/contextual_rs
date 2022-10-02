@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 01:22:36,051) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 883396 ON badfellow CANCELLED AT 2022-10-02T01:22:36 ***
-slurmstepd: error: *** STEP 883396.0 ON badfellow CANCELLED AT 2022-10-02T01:22:36 ***
-submitit WARNING (2022-10-02 01:22:36,175) - Bypassing signal SIGTERM

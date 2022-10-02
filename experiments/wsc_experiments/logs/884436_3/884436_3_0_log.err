@@ -1,5 +1,0 @@
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-submitit WARNING (2022-10-02 13:04:12,288) - Bypassing signal SIGCONT
-slurmstepd: error: *** STEP 884440.0 ON belongie-compute-01 CANCELLED AT 2022-10-02T13:04:12 ***
-slurmstepd: error: *** JOB 884440 ON belongie-compute-01 CANCELLED AT 2022-10-02T13:04:12 ***
-submitit WARNING (2022-10-02 13:04:12,428) - Bypassing signal SIGTERM

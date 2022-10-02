@@ -1,4 +1,0 @@
-slurmstepd: error: *** JOB 884460 ON nikola-compute-02 CANCELLED AT 2022-10-02T13:13:37 ***
-slurmstepd: error: *** STEP 884460.0 ON nikola-compute-02 CANCELLED AT 2022-10-02T13:13:37 ***
-submitit WARNING (2022-10-02 13:13:37,412) - Bypassing signal SIGTERM
-submitit WARNING (2022-10-02 13:13:37,413) - Bypassing signal SIGCONT

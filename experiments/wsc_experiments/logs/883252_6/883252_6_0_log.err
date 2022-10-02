@@ -1,5 +1,0 @@
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** JOB 883259 ON coecis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***
-slurmstepd: error: *** STEP 883259.0 ON coecis-compute-01 CANCELLED AT 2022-10-02T00:55:52 ***
-submitit WARNING (2022-10-02 00:55:52,118) - Bypassing signal SIGTERM
-submitit WARNING (2022-10-02 00:55:52,119) - Bypassing signal SIGCONT

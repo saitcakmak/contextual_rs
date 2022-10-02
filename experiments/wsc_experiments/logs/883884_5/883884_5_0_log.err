@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 03:24:53,479) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 883890 ON luxlab-compute-01 CANCELLED AT 2022-10-02T03:24:53 ***
-slurmstepd: error: *** STEP 883890.0 ON luxlab-compute-01 CANCELLED AT 2022-10-02T03:24:53 ***
-submitit WARNING (2022-10-02 03:24:53,541) - Bypassing signal SIGTERM

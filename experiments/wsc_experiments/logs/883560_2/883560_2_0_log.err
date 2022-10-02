@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 01:55:12,506) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 883563 ON desa-compute-01 CANCELLED AT 2022-10-02T01:55:12 ***
-slurmstepd: error: *** STEP 883563.0 ON desa-compute-01 CANCELLED AT 2022-10-02T01:55:12 ***
-submitit WARNING (2022-10-02 01:55:12,571) - Bypassing signal SIGTERM

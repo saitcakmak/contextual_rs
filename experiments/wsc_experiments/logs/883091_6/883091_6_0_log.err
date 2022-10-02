@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 00:02:24,211) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 883127 ON harpo CANCELLED AT 2022-10-02T00:02:24 ***
-slurmstepd: error: *** STEP 883127.0 ON harpo CANCELLED AT 2022-10-02T00:02:24 ***
-submitit WARNING (2022-10-02 00:02:24,266) - Bypassing signal SIGTERM

@@ -1,4 +1,0 @@
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** JOB 883035 ON sablab-gpu-04 CANCELLED AT 2022-10-02T00:02:24 ***
-slurmstepd: error: *** STEP 883035.0 ON sablab-gpu-04 CANCELLED AT 2022-10-02T00:02:24 ***
-slurmstepd: error: *** STEP 883035.0 STEPD TERMINATED ON sablab-gpu-04 AT 2022-10-02T00:08:53 DUE TO JOB NOT ENDING WITH SIGNALS ***

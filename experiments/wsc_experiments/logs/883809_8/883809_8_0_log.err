@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 03:17:24,828) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 883818 ON tripods-compute-02 CANCELLED AT 2022-10-02T03:17:24 ***
-slurmstepd: error: *** STEP 883818.0 ON tripods-compute-02 CANCELLED AT 2022-10-02T03:17:24 ***
-submitit WARNING (2022-10-02 03:17:24,912) - Bypassing signal SIGTERM

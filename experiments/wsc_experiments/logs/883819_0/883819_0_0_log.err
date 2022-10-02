@@ -1,3 +1,0 @@
-slurmstepd: error: *** JOB 883820 ON nikola-compute-02 CANCELLED AT 2022-10-02T03:17:24 ***
-srun: error: Slurm job 883820 has expired
-srun: Check SLURM_JOB_ID environment variable. Expired or invalid job 883820

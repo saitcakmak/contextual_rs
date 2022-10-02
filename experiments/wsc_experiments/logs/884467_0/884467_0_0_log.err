@@ -1,4 +1,0 @@
-submitit WARNING (2022-10-02 13:13:37,419) - Bypassing signal SIGCONT
-slurmstepd: error: *** JOB 884468 ON joachims-compute-02 CANCELLED AT 2022-10-02T13:13:37 ***
-slurmstepd: error: *** STEP 884468.0 ON joachims-compute-02 CANCELLED AT 2022-10-02T13:13:37 ***
-submitit WARNING (2022-10-02 13:13:37,772) - Bypassing signal SIGTERM

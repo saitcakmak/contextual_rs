@@ -1,5 +1,0 @@
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** JOB 883333 ON g2-compute-95 CANCELLED AT 2022-10-02T01:22:36 ***
-slurmstepd: error: *** STEP 883333.0 ON g2-compute-95 CANCELLED AT 2022-10-02T01:22:36 ***
-submitit WARNING (2022-10-02 01:22:36,330) - Bypassing signal SIGTERM
-submitit WARNING (2022-10-02 01:22:36,331) - Bypassing signal SIGCONT

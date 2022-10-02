@@ -1,3 +1,0 @@
-submitit INFO (2022-10-01 23:36:36,183) - Starting with JobEnvironment(job_id=883069_8, hostname=nikola-compute-05.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-10-01 23:36:36,183) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883069_8/883069_8_submitted.pkl
-Starting label LEVI, seed 48, iteration 0, time: 0.0002067089080810547

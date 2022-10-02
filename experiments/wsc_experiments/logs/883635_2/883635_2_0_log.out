@@ -1,9 +1,0 @@
-submitit INFO (2022-10-02 02:23:02,198) - Starting with JobEnvironment(job_id=883635_2, hostname=sablab-gpu-02.ece.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-10-02 02:23:02,198) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/883635_2/883635_2_submitted.pkl
-Appending iterations to existing output!Warning: If parameters other than `iterations` have been changed, this will corrupt the output!
-Starting label LEVI, seed 34, iteration 1970, time: 1577.3371105194092
-Starting label LEVI, seed 34, iteration 1980, time: 1598.9649403095245
-Starting label LEVI, seed 34, iteration 1990, time: 1620.0425434112549
-submitit WARNING (2022-10-02 02:24:01,533) - Bypassing signal SIGTERM
-submitit WARNING (2022-10-02 02:24:01,533) - Bypassing signal SIGCONT
-submitit INFO (2022-10-02 02:24:11,688) - Job completed successfully

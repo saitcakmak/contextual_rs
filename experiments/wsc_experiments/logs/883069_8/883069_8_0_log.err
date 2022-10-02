@@ -1,4 +1,0 @@
-srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** JOB 883078 ON nikola-compute-05 CANCELLED AT 2022-10-02T00:02:24 ***
-slurmstepd: error: *** STEP 883078.0 ON nikola-compute-05 CANCELLED AT 2022-10-02T00:02:24 ***
-slurmstepd: error: *** STEP 883078.0 STEPD TERMINATED ON nikola-compute-05 AT 2022-10-02T00:08:53 DUE TO JOB NOT ENDING WITH SIGNALS ***

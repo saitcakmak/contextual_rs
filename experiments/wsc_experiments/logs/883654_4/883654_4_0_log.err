@@ -1,4 +1,0 @@
-slurmstepd: error: *** JOB 883659 ON rush-compute-01 CANCELLED AT 2022-10-02T02:24:01 ***
-slurmstepd: error: *** STEP 883659.0 ON rush-compute-01 CANCELLED AT 2022-10-02T02:24:01 ***
-submitit WARNING (2022-10-02 02:24:01,489) - Bypassing signal SIGTERM
-submitit WARNING (2022-10-02 02:24:01,489) - Bypassing signal SIGCONT

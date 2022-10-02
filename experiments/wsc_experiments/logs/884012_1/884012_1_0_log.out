@@ -1,2 +1,0 @@
-submitit INFO (2022-10-02 04:15:03,896) - Starting with JobEnvironment(job_id=884012_1, hostname=nikola-compute-04.cs.cornell.edu, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-10-02 04:15:03,897) - Loading pickle: /home/gid-cakmaks/contextual_rs/experiments/wsc_experiments/logs/884012_1/884012_1_submitted.pkl
