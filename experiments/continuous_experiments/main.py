@@ -24,7 +24,7 @@ from gpytorch import ExactMarginalLogLikelihood
 from torch import Tensor
 
 from contextual_rs.continuous_context import MinZeta, find_next_arm_given_context
-from contextual_rs.levi import LEVI, discrete_levi
+from contextual_rs.levi import PredictiveEI, discrete_levi
 
 
 class GroundTruthModel:
@@ -296,7 +296,7 @@ def main(
                 kernel_scale=float(label[10:]) if len(label) > 9 else 2.0,
             )
         elif "LEVI" in label:
-            acqf = LEVI(
+            acqf = PredictiveEI(
                 model=model
             )
             with gpytorch.settings.cholesky_max_tries(6):
@@ -308,8 +308,8 @@ def main(
                     raw_samples=1024,
                 )
             next_arm, _ = discrete_levi(
-                next_context=next_context,
                 model=model,
+                context_set=next_context,
             )
         elif label == "random":
             next_arm = torch.randint(low=0, high=num_arms, size=(1,), device=device)
