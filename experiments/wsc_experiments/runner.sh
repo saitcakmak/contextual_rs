@@ -1,8 +1,8 @@
 #!/bin/bash
 
 arg_list=(
-#  "b_3_mean"
-#  "b_3_worst"
+  "b_3_mean"
+  "b_3_worst"
   "g_4_mean"
   "g_4_worst"
 #  "h_4_mean"
@@ -20,7 +20,7 @@ for i in {1..1}
 do
   for arg in "${arg_list[@]}"
   do
-    scancel -u gid-cakmaks
+#    scancel -u gid-cakmaks
     sleep 0.1
     for key in "${key_list[@]}"
     do
