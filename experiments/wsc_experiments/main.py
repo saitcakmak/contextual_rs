@@ -425,6 +425,7 @@ def main(
             next_arm, next_context = discrete_levi(
                 model=model,
                 context_set=context_map,
+                weights=weights,
             )
             next_point = torch.cat(
                 [torch.tensor([next_arm], **ckwargs), next_context]
