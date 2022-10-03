@@ -5,8 +5,8 @@ arg_list=(
   "b_3_worst"
   "g_4_mean"
   "g_4_worst"
-#  "h_4_mean"
-#  "c_5_mean"
+  "h_4_mean"
+  "c_5_mean"
 )
 key_list=(
 #  "ML_IKG"
