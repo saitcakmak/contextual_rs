@@ -37,7 +37,7 @@ config = "config_" + sys.argv[1]
 last_arg = sys.argv[2] if len(sys.argv) > 2 else "-a"
 if len(sys.argv) > 3:
     labels = sys.argv[3:]
-for seed_batch, label in product(range(0, 10), labels):
+for seed_batch, label in product(range(0, 3), labels):
     with executor.batch():
         for seed in range(seed_batch * 10, (seed_batch + 1) * 10):
             current_dir = os.path.dirname(os.path.abspath(__file__))
