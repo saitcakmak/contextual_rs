@@ -46,7 +46,7 @@ def _compute_all_EI_standard(X: Tensor, model: ModelListGP) -> Tensor:
     return ei
 
 
-def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
+def _compute_all_EI_LEVI(X: Tensor, model: ModelListGP) -> Tensor:
     r"""Compute the EI for all arms for the given contexts.
     The `best_f` for each context is the maximum of the posterior mean.
 
@@ -82,6 +82,45 @@ def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
     ucdf = normal.cdf(u)
     updf = torch.exp(normal.log_prob(u))
     ei = delta * ucdf - sigma * updf
+    return ei
+
+def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
+    r"""Compute the EI for all arms for the given contexts.
+    The `best_f` for each context is the maximum of the posterior mean.
+
+    NOTE: This uses the EI formula for LEVI, updated from the eq 12 of paper
+    to fix the buggy definition.
+
+    Args:
+        X: A `batch x 1 x d_c`-dim tensor of contexts.
+        model: A ModelListGP with a model for each alternative, defined
+            over the context space.
+
+    Returns:
+        A `batch x num_arms`-dim tensor of EI values.
+    """
+    posterior = model.posterior(X)
+    mean = posterior.mean
+    # Get the max mean excluding the alternative corresponding to the given row.
+    expanded_mean = mean.expand(-1, mean.shape[-1], -1)
+    expanded_mean = expanded_mean - torch.full(mean.shape[-1:],float("inf")).diag()
+    # Delta_a modified from eq 12 to fix the weird absolute value & negative.
+    delta = mean.squeeze(-2) - expanded_mean.max(dim=-1).values
+
+    variance = posterior.variance.clamp_min(1e-9).squeeze(-2)
+    variance_w_noise = variance.clone()
+    for i in range(variance.shape[-1]):
+        raw_noise = model.likelihood.likelihoods[i].noise.item()
+        standardize_scale = model.models[i].outcome_transform._stdvs_sq.item()
+        variance_w_noise[..., i] = variance_w_noise[..., i] + raw_noise * standardize_scale
+    # This is the sigma_tilde as defined after eq 9, evaluated at x_n+1, x_n+1.
+    sigma = variance / variance_w_noise.sqrt()
+    # Calculate eq 12.
+    u = delta / sigma
+    normal = Normal(torch.zeros_like(u), torch.ones_like(u))
+    ucdf = normal.cdf(u)
+    updf = torch.exp(normal.log_prob(u))
+    ei = sigma * (updf + u * ucdf)
     return ei
 
 
