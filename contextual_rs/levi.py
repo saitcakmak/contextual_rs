@@ -100,12 +100,9 @@ def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
         A `batch x num_arms`-dim tensor of EI values.
     """
     posterior = model.posterior(X)
-    mean = posterior.mean
-    # Get the max mean excluding the alternative corresponding to the given row.
-    expanded_mean = mean.expand(-1, mean.shape[-1], -1)
-    expanded_mean = expanded_mean - torch.full(mean.shape[-1:],float("inf")).diag()
-    # Delta_a modified from eq 12 to fix the weird absolute value & negative.
-    delta = mean.squeeze(-2) - expanded_mean.max(dim=-1).values
+    mean = posterior.mean.squeeze(-2)
+    # Using delta from original EI.
+    delta = mean - mean.max(dim=-1, keepdim=True).values
 
     variance = posterior.variance.clamp_min(1e-9).squeeze(-2)
     variance_w_noise = variance.clone()
