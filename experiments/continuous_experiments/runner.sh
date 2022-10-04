@@ -6,8 +6,8 @@ arg_list=(
  "hartmann"
 )
 key_list=(
-  "GP-C-OCBA-1.0"
-  "random"
+#  "GP-C-OCBA-1.0"
+#  "random"
   "LEVI"
 )
 

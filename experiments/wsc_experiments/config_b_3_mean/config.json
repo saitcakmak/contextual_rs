@@ -1,5 +1,5 @@
 {
-    "iterations": 2005,
+    "iterations": 2000,
     "fit_frequency": 10,
     "num_arms": 10,
     "num_contexts": 10,
