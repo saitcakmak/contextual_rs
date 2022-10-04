@@ -54,7 +54,7 @@ labels = [
     "Li",
     "Gao",
 ]
-num_batches = 3  # 10 * num_batches jobs are submitted.
+num_batches = 10  # 10 * num_batches jobs are submitted.
 config = "config_" + sys.argv[1]
 last_arg = sys.argv[2] if len(sys.argv) > 2 else "-a"
 if len(sys.argv) > 3:
