@@ -1,0 +1,8 @@
+{
+    "iterations": 1000,
+    "fit_frequency": 10,
+    "num_arms": 20,
+    "num_eval_contexts": 4096,
+    "context_dim": 7,
+    "ground_truth_kwargs": {"function": "cosine8"}
+}
