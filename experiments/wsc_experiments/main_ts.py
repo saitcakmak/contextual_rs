@@ -389,7 +389,8 @@ def submitit_main(
     exp_dir = path.join(current_dir, config)
     config_path = path.join(exp_dir, "config.json")
     seed = int(seed)
-    output_path = path.join(exp_dir, label.split("_")[0], f"{str(seed).zfill(4)}_{label}.pt")
+    # output_path = path.join(exp_dir, label.split("_")[0], f"{str(seed).zfill(4)}_{label}.pt")
+    output_path = path.join(exp_dir, f"{str(seed).zfill(4)}_{label}.pt")
     input_dict = None
     mode = None
     if path.exists(output_path):

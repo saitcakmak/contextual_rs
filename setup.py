@@ -7,6 +7,7 @@ requirements = [
     "scipy>=1.6.0",
     "jupyter",
     "matplotlib",
+    "pandas",
 ]
 
 dev_requires = [
