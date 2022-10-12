@@ -24,6 +24,11 @@ conda install pytorch -c pytorch
 pip install -e .
 ```
 
+### Repo Structure:
+* The `WSC` brach includes the code for the WSC version of the paper.
+* The `post_wsc` branch includes additional algorithms and experiments, which are 
+  presented in the arXiv version and the journal submission.
+
 ### Directory:
 Any folder that is not noted below is safe to ignore.
 
