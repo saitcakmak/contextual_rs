@@ -24,6 +24,11 @@ conda install pytorch -c pytorch
 pip install -e .
 ```
 
+### Repo Structure:
+* The `WSC` brach includes the code for the WSC version of the paper.
+* The `post_wsc` branch includes additional algorithms and experiments, which are 
+  presented in the arXiv version and the journal submission.
+
 ### Directory:
 Any folder that is not noted below is safe to ignore.
 
@@ -31,7 +36,9 @@ Any folder that is not noted below is safe to ignore.
   experiments, as well as some experimental ones that didn't make it to the paper. The 
   main logic of the GP-C-OCBA is defined in `contextual_rs_strategies` as the 
   `gao_modellist` function. Provided with a ModelListGP, this returns the next 
-  arm-context to sample from. Refer to the experiments for actual usage.
+  arm-context to sample from. Refer to the experiments for actual usage. The LEVI
+  algorithm is defined in `levi.py`, and the continuous extension of GP-C-OCBA is
+  implemented in `continuous_context.py`.
 - The `experiments` folder contains the main scripts for running the experiments and 
   the corresponding experiment output. The experiments presented in the WSC paper are 
   found in the `wsc_experiments` folder and were run using the `main.py` (and other 
