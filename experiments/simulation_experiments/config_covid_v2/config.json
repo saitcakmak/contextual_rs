@@ -1,6 +1,0 @@
-{
-    "num_total_samples": 2000,
-    "fit_frequency": 10,
-    "rho_key": "mean",
-    "simulator_name": "covid_v2"
-}

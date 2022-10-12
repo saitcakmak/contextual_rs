@@ -15,7 +15,6 @@ from torch import Tensor
 
 from contextual_rs.modified_ts_policies import modified_ts, modified_ts_plus, get_beta_hat
 from contextual_rs.test_functions.covid_exp_class import CovidSim, CovidEval, CovidSimV2, CovidEvalV2
-from contextual_rs.test_functions.esophageal_cancer import EsophagealCancer
 
 
 class SimulatorWrapper:
@@ -41,6 +40,23 @@ class SimulatorWrapper:
         ]
     )
 
+    covid_arms_v3 = torch.tensor(
+        [
+            [0.2, 0.3],
+            [0.2, 0.4],
+            [0.2, 0.5],
+            [0.3, 0.2],
+            [0.3, 0.3],
+            [0.3, 0.4],
+            [0.3, 0.5],
+            [0.4, 0.2],
+            [0.4, 0.3],
+            [0.4, 0.4],
+            [0.5, 0.2],
+            [0.5, 0.3],
+        ]
+    )
+
     def __init__(
         self,
         function: str,
@@ -56,7 +72,7 @@ class SimulatorWrapper:
             function: The name of the base test function.
             ckwargs: Common tensor arguments, dtype and device.
         """
-        assert function in ["covid", "covid_v2", "cancer"]
+        assert function in ["covid", "covid_v2", "covid_v3", "covid_v4", "covid_v5", "cancer"]
         if function == "covid":
             # Arguments for Covid simulator.
             self.arm_map = self.covid_arms
@@ -67,16 +83,25 @@ class SimulatorWrapper:
             self.dim = CovidSim.dim
             self.function = CovidSim(negate=True)
             self.true_function = CovidEval(negate=True)
-        elif function == "covid_v2":
+        elif function in ["covid_v2", "covid_v3", "covid_v4", "covid_v5"]:
             # Arguments for Covid simulator with updated parameterization
-            self.arm_map = self.covid_arms
+            self.arm_map = self.covid_arms if function == "covid_v2" else self.covid_arms_v3
             self.num_arms = self.arm_map.shape[0]
             self.context_map = CovidSimV2().context_samples
             # Extreme design is the edges of the cube.
             self.extreme_design = self.context_map[[0, 3, -4, -1]]
             self.dim = CovidSimV2.dim
-            self.function = CovidSimV2(negate=True)
-            self.true_function = CovidEvalV2(negate=True)
+            if function == "covid_v4":
+                # Variance reduced version of covid_v3
+                self.function = CovidSimV2(negate=True, alpha=0.75)
+                self.true_function = CovidEvalV2(negate=True).stored_forward
+            elif function == "covid_v5":
+                # Variance reduced version of covid_v3
+                self.function = CovidSimV2(negate=True, alpha=0.5)
+                self.true_function = CovidEvalV2(negate=True).stored_forward
+            else:
+                self.function = CovidSimV2(negate=True)
+                self.true_function = CovidEvalV2(negate=True)
         else:
             # Arguments for cancer simulator.
             raise NotImplementedError

@@ -10,11 +10,8 @@ from typing import Union, List, Optional
 
 import numpy as np
 import torch
-from botorch import fit_gpytorch_model
-from botorch.models import SingleTaskGP, ModelListGP
-from botorch.models.transforms import Standardize, Normalize
+from botorch.models import ModelListGP
 from botorch.utils.transforms import unnormalize
-from gpytorch import ExactMarginalLogLikelihood
 from torch import Tensor
 
 from contextual_rs.contextual_rs_strategies import (
@@ -22,6 +19,7 @@ from contextual_rs.contextual_rs_strategies import (
     gao_sampling_strategy,
     gao_modellist,
 )
+from contextual_rs.experiment_utils import fit_modellist
 from contextual_rs.finite_ikg import (
     finite_ikg_maximizer_modellist,
 )
@@ -53,6 +51,23 @@ class SimulatorWrapper:
         ]
     )
 
+    covid_arms_v3 = torch.tensor(
+        [
+            [0.2, 0.3],
+            [0.2, 0.4],
+            [0.2, 0.5],
+            [0.3, 0.2],
+            [0.3, 0.3],
+            [0.3, 0.4],
+            [0.3, 0.5],
+            [0.4, 0.2],
+            [0.4, 0.3],
+            [0.4, 0.4],
+            [0.5, 0.2],
+            [0.5, 0.3],
+        ]
+    )
+
     def __init__(
         self,
         function: str,
@@ -68,7 +83,7 @@ class SimulatorWrapper:
             function: The name of the base test function.
             ckwargs: Common tensor arguments, dtype and device.
         """
-        assert function in ["covid", "covid_v2", "cancer"]
+        assert function in ["covid", "covid_v2", "covid_v3", "covid_v4", "covid_v5", "cancer"]
         if function == "covid":
             # Arguments for Covid simulator.
             self.arm_map = self.covid_arms
@@ -77,27 +92,27 @@ class SimulatorWrapper:
             self.dim = CovidSim.dim
             self.function = CovidSim(negate=True)
             self.true_function = CovidEval(negate=True)
-        elif function == "covid_v2":
+        elif function in ["covid_v2", "covid_v3", "covid_v4", "covid_v5"]:
             # Arguments for Covid simulator with updated parameterization
-            self.arm_map = self.covid_arms
+            self.arm_map = self.covid_arms if function == "covid_v2" else self.covid_arms_v3
             self.num_arms = self.arm_map.shape[0]
             self.context_map = CovidSimV2().context_samples
             # Extreme design is the edges of the cube.
             self.extreme_design = self.context_map[[0, 3, -4, -1]]
             self.dim = CovidSimV2.dim
-            self.function = CovidSimV2(negate=True)
-            self.true_function = CovidEvalV2(negate=True)
+            if function == "covid_v4":
+                # Variance reduced version of covid_v3
+                self.function = CovidSimV2(negate=True, alpha=0.75)
+                self.true_function = CovidEvalV2(negate=True).stored_forward
+            elif function == "covid_v5":
+                # Variance reduced version of covid_v3
+                self.function = CovidSimV2(negate=True, alpha=0.5)
+                self.true_function = CovidEvalV2(negate=True).stored_forward
+            else:
+                self.function = CovidSimV2(negate=True)
+                self.true_function = CovidEvalV2(negate=True)
         else:
             # Arguments for cancer simulator.
-            self.arm_map = torch.tensor([0, 1, 2])
-            self.num_arms = 3
-            self.context_map = 0  # TODO: should be stored as unnormalized
-            self.dim = 5
-            self.function = EsophagealCancer()
-            # TODO: may want to keep this cheap as well
-            self.true_function = lambda X: 0  # TODO:
-            # TODO: We need the true_function to be cheap to evaluate.
-            #  Probably simulate and store some value.
             raise NotImplementedError
         self.ckwargs = ckwargs
 
@@ -160,49 +175,6 @@ class SimulatorWrapper:
             dim=-1,
         ).view(-1, self.dim)
         return self.function(X).view(-1, 1).to(**self.ckwargs)
-
-
-def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
-    r"""
-    Fit a ModelListGP with a SingleTaskGP model for each arm.
-
-    Args:
-        X: A tensor representing all arm-context pairs that have been evaluated.
-            First column represents the arm.
-        Y: A tensor representing the corresponding evaluations.
-        num_arms: An integer denoting the number of arms.
-
-    Returns:
-        A fitted ModelListGP.
-    """
-    mask_list = [X[..., 0] == i for i in range(num_arms)]
-    model = ModelListGP(
-        *[
-            SingleTaskGP(
-                X[mask_list[i]][..., 1:],
-                Y[mask_list[i]],
-                outcome_transform=Standardize(m=1),
-                input_transform=Normalize(d=X.shape[-1] - 1),
-            )
-            for i in range(num_arms)
-        ]
-    )
-    for m in model.models:
-        mll = ExactMarginalLogLikelihood(m.likelihood, m)
-        fit_gpytorch_model(mll)
-    return model
-
-
-def fit_single_gp(X: Tensor, Y: Tensor) -> SingleTaskGP:
-    r"""
-    Fit a SingleTaskGP on all data.
-    """
-    model = SingleTaskGP(
-        X, Y, outcome_transform=Standardize(m=1), input_transform=Normalize(d=X.shape[-1]),
-    )
-    mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
-    return model
 
 
 # These are the allowed algorithm names.
