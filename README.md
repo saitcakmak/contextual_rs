@@ -44,4 +44,11 @@ Any folder that is not noted below is safe to ignore.
   found in the `wsc_experiments` folder and were run using the `main.py` (and other 
   helpers). The docstrings and in-line comments in `main.py` were updated to explain 
   what does what. It should be relatively straightforward to follow, though I would be 
-  happy to help out where needed (email / open a GitHub issue).
+  happy to help out where needed. Feel free to open up a GitHub issue with any questions!
+
+
+NOTE: The runtimes reported for LEVI in the paper come from the experiment outputs labeled
+`<seed>_LEVI.pt` and the actual results come from the outputs labeled `<seed>_LEVI_new.pt`.
+This is due to some changes that were made to model fitting logic before running LEVI_new,
+which significantly reduced the common overhead shared with the other method. To keep things
+comparable, we reported the runtimes obtained using the previous version.
