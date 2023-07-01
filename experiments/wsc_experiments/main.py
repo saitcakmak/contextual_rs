@@ -37,6 +37,7 @@ from contextual_rs.generalized_pcs import (
 )
 from contextual_rs.levi import discrete_levi
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
+from contextual_rs.experiment_utils import fit_modellist_with_reuse
 
 
 class GroundTruthModel:
@@ -146,54 +147,6 @@ class GroundTruthModel:
     def evaluate_all(self):
         true_evals = self.evaluate_all_true()
         return true_evals + torch.randn_like(true_evals) * self.observation_noise
-
-
-# # of inputs used to train the model the last time. Used to skip re-fitting if not necessary.
-num_last_train_inputs = []
-
-
-def fit_modellist(X: Tensor, Y: Tensor, num_arms: int, old_model: Optional[ModelListGP] = None) -> ModelListGP:
-    r"""
-    Fit a ModelListGP with a SingleTaskGP model for each arm.
-
-    Args:
-        X: A tensor representing all arm-context pairs that have been evaluated.
-            First column represents the arm.
-        Y: A tensor representing the corresponding evaluations.
-        num_arms: An integer denoting the number of arms.
-        old_model:
-
-    Returns:
-        A fitted ModelListGP.
-    """
-    global num_last_train_inputs
-    mask_list = [X[..., 0] == i for i in range(num_arms)]
-    models = []
-    skip_count = 0
-    for i in range(num_arms):
-        num_train = len(Y[mask_list[i]])
-        if old_model is not None and len(old_model.models) == len(num_last_train_inputs):
-            # If the model has the same inputs, we can reuse it.
-            if num_train == num_last_train_inputs[i]:
-                models.append(old_model.models[i])
-                skip_count += 1
-                continue
-        # If the model inputs changed, re-fit.
-        m = SingleTaskGP(
-            X[mask_list[i]][..., 1:],
-            Y[mask_list[i]],
-            outcome_transform=Standardize(m=1),
-        )
-        mll = ExactMarginalLogLikelihood(m.likelihood, m)
-        fit_gpytorch_model(mll)
-        models.append(m)
-        try:
-            num_last_train_inputs[i] = num_train
-        except IndexError:
-            assert len(num_last_train_inputs) == i
-            num_last_train_inputs.append(num_train)
-    print(f"Skipped model fitting for {skip_count} out of {num_arms}.")
-    return ModelListGP(*models)
 
 
 # These are the allowed algorithm names. See top of the file for what these are.
@@ -409,10 +362,10 @@ def main(
                     model = ModelListGP(*models)
                 except RuntimeError:
                     # Default to fitting a fresh model in case of an error.
-                    model = fit_modellist(X, Y, num_arms, old_model)
+                    model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
             else:
                 # Fit and train a new ModelListGP.
-                model = fit_modellist(X, Y, num_arms, old_model)
+                model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
             old_model = model
         elif label in ["Li", "Gao"]:
             # Use the independent normally distributed model.

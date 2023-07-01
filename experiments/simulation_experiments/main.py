@@ -19,13 +19,14 @@ from contextual_rs.contextual_rs_strategies import (
     gao_sampling_strategy,
     gao_modellist,
 )
-from contextual_rs.experiment_utils import fit_modellist
+from contextual_rs.experiment_utils import fit_modellist_with_reuse
 from contextual_rs.finite_ikg import (
     finite_ikg_maximizer_modellist,
 )
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
 from contextual_rs.test_functions.covid_exp_class import CovidSim, CovidEval, CovidSimV2, CovidEvalV2
 from contextual_rs.test_functions.esophageal_cancer import EsophagealCancer
+from contextual_rs.levi import discrete_levi
 
 
 class SimulatorWrapper:
@@ -183,6 +184,7 @@ labels = [
     "GP-C-OCBA",
     "DSCO",
     "C-OCBA",
+    "LEVI-new",
 ]
 
 
@@ -348,7 +350,7 @@ def main(
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
-        if split_label[0] in ["IKG", "GP-C-OCBA"]:
+        if split_label[0] in ["IKG", "GP-C-OCBA", "LEVI-new"]:
             # using a ModelListGP
             if (i - existing_iterations) % fit_frequency != 0:
                 # append the last evaluations to the model with low cost updates.
@@ -363,10 +365,10 @@ def main(
                     model = ModelListGP(*models)
                 except RuntimeError:
                     # Default to fitting a fresh model in case of an error.
-                    model = fit_modellist(X, Y, num_arms)
+                    model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
             else:
                 # Fit and train a new ModelListGP.
-                model = fit_modellist(X, Y, num_arms)
+                model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
             old_model = model
         elif split_label[0] in ["DSCO", "C-OCBA"]:
             # Use the independent normally distributed model.
@@ -402,6 +404,15 @@ def main(
                 ).view(1, -1)
             else:
                 raise NotImplementedError
+        elif "LEVI" in split_label[0]:
+            next_arm, next_context = discrete_levi(
+                model=model,
+                context_set=context_map,
+                weights=weights,
+            )
+            next_point = torch.cat(
+                [torch.tensor([next_arm], **ckwargs), next_context]
+            ).view(1, -1)
         else:
             if split_label[0] == "DSCO":
                 next_arm, next_context = li_sampling_strategy(model)
@@ -412,7 +423,7 @@ def main(
             next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
         # get the next evaluation
-        if split_label[0] == "GP-C-OCBA":
+        if split_label[0] == "GP-C-OCBA" or "LEVI" in split_label[0]:
             next_eval = simulator.evaluate(next_arm, next_context.view(1, -1))
         else:
             next_eval = simulator.evaluate_w_index(next_arm, next_context)
@@ -423,7 +434,7 @@ def main(
 
         # check for correct selection for empirical PCS
         # This is for the actual reported PCS.
-        if split_label[0] in ["IKG", "GP-C-OCBA"]:
+        if split_label[0] in ["IKG", "GP-C-OCBA", "LEVI-new"]:
             post_mean = model.posterior(context_map).mean.t()
         else:
             post_mean = model.means
