@@ -25,6 +25,7 @@ from torch import Tensor
 
 from contextual_rs.continuous_context import MinZeta, find_next_arm_given_context
 from contextual_rs.levi import PredictiveEI, discrete_levi
+from contextual_rs.experiment_utils import fit_modellist_with_reuse
 
 
 class GroundTruthModel:
@@ -100,44 +101,14 @@ class GroundTruthModel:
         return true_evals + torch.randn_like(true_evals) * self.observation_noise
 
 
-def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
-    r"""
-    Fit a ModelListGP with a SingleTaskGP model for each arm.
-
-    Args:
-        X: A tensor representing all arm-context pairs that have been evaluated.
-            First column represents the arm.
-        Y: A tensor representing the corresponding evaluations.
-        num_arms: An integer denoting the number of arms.
-
-    Returns:
-        A fitted ModelListGP.
-    """
-    mask_list = [X[..., 0] == i for i in range(num_arms)]
-    model = ModelListGP(
-        *[
-            SingleTaskGP(
-                X[mask_list[i]][..., 1:],
-                Y[mask_list[i]],
-                outcome_transform=Standardize(m=1),
-            )
-            for i in range(num_arms)
-        ]
-    )
-    with gpytorch.settings.cholesky_max_tries(6):
-        for m in model.models:
-            mll = ExactMarginalLogLikelihood(m.likelihood, m)
-            fit_gpytorch_model(mll)
-    return model
-
-
 # These are the allowed algorithm names. See top of the file for what these are.
 labels = [
     "GP-C-OCBA",
     "GP-C-OCBA-1.0",  # KDE scale 1.0.
     "GP-C-OCBA-0.5",  # KDE scale 0.5.
     "random",
-    "LEVI",
+    # "LEVI",
+    "LEVI-new",
 ]
 
 
@@ -272,10 +243,10 @@ def main(
                 model = ModelListGP(*models)
             except RuntimeError:
                 # Default to fitting a fresh model in case of an error.
-                model = fit_modellist(X, Y, num_arms)
+                model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
         else:
             # Fit and train a new ModelListGP.
-            model = fit_modellist(X, Y, num_arms)
+            model = fit_modellist_with_reuse(X, Y, num_arms, old_model)
         old_model = model
 
         if "GP-C-OCBA" in label:
