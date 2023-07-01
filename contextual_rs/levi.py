@@ -26,6 +26,9 @@ def _compute_all_EI_standard(X: Tensor, model: ModelListGP) -> Tensor:
     NOTE: This uses the standard noise-free EI formula. This is not the
     same as the EI used in LEVI.
 
+    Delta = mean - best_f
+    EI = Delta * CDF(Delta / sigma) + sigma * PDF(Delta / sigma)
+
     Args:
         X: A `batch x 1 x d_c`-dim tensor of contexts.
         model: A ModelListGP with a model for each alternative, defined
@@ -51,6 +54,9 @@ def _compute_all_EI_LEVI(X: Tensor, model: ModelListGP) -> Tensor:
     The `best_f` for each context is the maximum of the posterior mean.
 
     NOTE: This uses the EI formula for LEVI, as given in Eq 12 of the paper.
+
+    Delta = - |mean - best_f|
+    EI = Delta * CDF(Delta / sigma) - sigma * PDF(Delta / sigma)
 
     Args:
         X: A `batch x 1 x d_c`-dim tensor of contexts.
@@ -91,6 +97,9 @@ def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
     NOTE: This uses the EI formula for LEVI, updated from the eq 12 of paper
     to fix the buggy definition.
 
+    Delta = mean - best_f
+    EI = Delta * CDF(Delta / sigma) + sigma * PDF(Delta / sigma)
+
     Args:
         X: A `batch x 1 x d_c`-dim tensor of contexts.
         model: A ModelListGP with a model for each alternative, defined
@@ -103,6 +112,48 @@ def _compute_all_EI(X: Tensor, model: ModelListGP) -> Tensor:
     mean = posterior.mean.squeeze(-2)
     # Using delta from original EI.
     delta = mean - mean.max(dim=-1, keepdim=True).values
+
+    variance = posterior.variance.clamp_min(1e-9).squeeze(-2)
+    variance_w_noise = variance.clone()
+    for i in range(variance.shape[-1]):
+        raw_noise = model.likelihood.likelihoods[i].noise.item()
+        standardize_scale = model.models[i].outcome_transform._stdvs_sq.item()
+        variance_w_noise[..., i] = variance_w_noise[..., i] + raw_noise * standardize_scale
+    # This is the sigma_tilde as defined after eq 9, evaluated at x_n+1, x_n+1.
+    sigma = variance / variance_w_noise.sqrt()
+    # Calculate eq 12.
+    u = delta / sigma
+    normal = Normal(torch.zeros_like(u), torch.ones_like(u))
+    ucdf = normal.cdf(u)
+    updf = torch.exp(normal.log_prob(u))
+    ei = sigma * (updf + u * ucdf)
+    return ei
+
+def _compute_all_EI_reviewer(X: Tensor, model: ModelListGP) -> Tensor:
+    r"""Compute the EI for all arms for the given contexts.
+    The `best_f` for each context is the maximum of the posterior mean.
+
+    NOTE: This uses the EI formula for LEVI with the - flipped to be a +
+    and the definition of Delta kept as recommended by the reviewer.
+
+    Delta = - |mean - best_f|
+    EI = Delta * CDF(Delta / sigma) + sigma * PDF(Delta / sigma)
+
+    Args:
+        X: A `batch x 1 x d_c`-dim tensor of contexts.
+        model: A ModelListGP with a model for each alternative, defined
+            over the context space.
+
+    Returns:
+        A `batch x num_arms`-dim tensor of EI values.
+    """
+    posterior = model.posterior(X)
+    mean = posterior.mean
+    # Get the max mean excluding the alternative corresponding to the given row.
+    expanded_mean = mean.expand(-1, mean.shape[-1], -1)
+    expanded_mean = expanded_mean - torch.full(mean.shape[-1:], float("inf"), device=mean.device, dtype=mean.dtype).diag()
+    # Delta_a as defined after eq 12.
+    delta = - (mean.squeeze(-2) - expanded_mean.max(dim=-1).values).abs()
 
     variance = posterior.variance.clamp_min(1e-9).squeeze(-2)
     variance_w_noise = variance.clone()
@@ -141,7 +192,7 @@ class PredictiveEI(AnalyticAcquisitionFunction):
         Returns:
             A `batch`-dim tensor of max EI values.
         """
-        all_ei = _compute_all_EI(X=X, model=self.model)
+        all_ei = _compute_all_EI_reviewer(X=X, model=self.model)
         return all_ei.max(dim=-1).values
 
 
@@ -165,7 +216,7 @@ def discrete_levi(
     Returns:
         The index of the next alternative and the next context.
     """
-    all_ei = _compute_all_EI(X=context_set.unsqueeze(-2), model=model)
+    all_ei = _compute_all_EI_reviewer(X=context_set.unsqueeze(-2), model=model)
     max_ei, max_idcs = all_ei.max(dim=-1)
     if weights is not None:
         # Applying here since it is the same for all arms.

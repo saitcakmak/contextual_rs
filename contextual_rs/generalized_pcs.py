@@ -5,7 +5,7 @@ import botorch
 import torch
 from botorch.models import ModelListGP
 from botorch.models.model import Model
-from botorch.sampling.samplers import MCSampler
+from botorch.sampling.base import MCSampler
 from torch import Tensor
 
 
