@@ -182,6 +182,7 @@ class SimulatorWrapper:
 labels = [
     "IKG",
     "GP-C-OCBA",
+    "GP-C-OCBA-new",  # This is a clone to produce runtimes with updated model fitting code.
     "DSCO",
     "C-OCBA",
     "LEVI-new",
@@ -350,7 +351,7 @@ def main(
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
             )
-        if split_label[0] in ["IKG", "GP-C-OCBA", "LEVI-new"]:
+        if split_label[0] in ["IKG", "GP-C-OCBA", "GP-C-OCBA-new", "LEVI-new"]:
             # using a ModelListGP
             if (i - existing_iterations) % fit_frequency != 0:
                 # append the last evaluations to the model with low cost updates.
@@ -376,7 +377,7 @@ def main(
         else:
             raise NotImplementedError
 
-        if split_label[0] in ["IKG", "GP-C-OCBA"]:
+        if split_label[0] in ["IKG", "GP-C-OCBA", "GP-C-OCBA-new"]:
             # Algorithms for ModelListGP
             if "IKG" in label:
                 with torch.no_grad():
@@ -423,7 +424,7 @@ def main(
             next_point = torch.tensor([[next_arm, next_context]], **ckwargs)
 
         # get the next evaluation
-        if split_label[0] == "GP-C-OCBA" or "LEVI" in split_label[0]:
+        if "GP-C-OCBA" in split_label[0] or "LEVI" in split_label[0]:
             next_eval = simulator.evaluate(next_arm, next_context.view(1, -1))
         else:
             next_eval = simulator.evaluate_w_index(next_arm, next_context)
@@ -434,7 +435,7 @@ def main(
 
         # check for correct selection for empirical PCS
         # This is for the actual reported PCS.
-        if split_label[0] in ["IKG", "GP-C-OCBA", "LEVI-new"]:
+        if split_label[0] in ["IKG", "GP-C-OCBA", "GP-C-OCBA-new", "LEVI-new"]:
             post_mean = model.posterior(context_map).mean.t()
         else:
             post_mean = model.means
