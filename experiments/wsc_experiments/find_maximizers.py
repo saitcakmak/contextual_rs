@@ -23,7 +23,7 @@ from botorch.utils.transforms import unnormalize
 from gpytorch import ExactMarginalLogLikelihood
 from torch import Tensor
 from contextual_rs.models.contextual_independent_model import ContextualIndependentModel
-
+from contextual_rs.experiment_utils import fit_modellist_with_reuse as fit_modellist
 
 class GroundTruthModel:
     """A class representing the true reward function."""
@@ -137,48 +137,6 @@ class GroundTruthModel:
 # # of inputs used to train the model the last time. Used to skip re-fitting if not necessary.
 num_last_train_inputs = []
 
-
-def fit_modellist(X: Tensor, Y: Tensor, num_arms: int, old_model: Optional[ModelListGP] = None) -> ModelListGP:
-    r"""
-    Fit a ModelListGP with a SingleTaskGP model for each arm.
-
-    Args:
-        X: A tensor representing all arm-context pairs that have been evaluated.
-            First column represents the arm.
-        Y: A tensor representing the corresponding evaluations.
-        num_arms: An integer denoting the number of arms.
-        old_model:
-
-    Returns:
-        A fitted ModelListGP.
-    """
-    global num_last_train_inputs
-    mask_list = [X[..., 0] == i for i in range(num_arms)]
-    models = []
-    for i in range(num_arms):
-        num_train = len(Y[mask_list[i]])
-        if old_model is not None and len(old_model.models) == len(num_last_train_inputs):
-            # If the model has the same inputs, we can reuse it.
-            if num_train == num_last_train_inputs[i]:
-                models.append(old_model.models[i])
-                continue
-        # If the model inputs changed, re-fit.
-        m = SingleTaskGP(
-            X[mask_list[i]][..., 1:],
-            Y[mask_list[i]],
-            outcome_transform=Standardize(m=1),
-        )
-        mll = ExactMarginalLogLikelihood(m.likelihood, m)
-        fit_gpytorch_model(mll)
-        models.append(m)
-        try:
-            num_last_train_inputs[i] = num_train
-        except IndexError:
-            assert len(num_last_train_inputs) == i
-            num_last_train_inputs.append(num_train)
-    return ModelListGP(*models)
-
-
 # These are the allowed algorithm names. See top of the file for what these are.
 labels = [
     "ML_IKG",
@@ -274,7 +232,7 @@ def main(
     existing_iterations = input_dict["pcs_estimates"].shape[0]
     if existing_iterations != iterations:
         raise RuntimeError(f"Not enough observations {existing_iterations=}")
-    if "maximizers" in input_dict and mode != "-f":
+    if "all_maximizers" in input_dict and mode != "-f":
         raise RuntimeError("Maximizers were already computed. Skipping!")
     if mode not in ["-f", "-a"]:
         raise RuntimeError("Mode unsupported!")
@@ -285,8 +243,8 @@ def main(
     all_maximizers = torch.zeros(iterations, num_contexts, **ckwargs)
     old_model = None
     for i in range(0, iterations):
-        X = all_X[num_init_obs + i:]
-        Y = all_Y[num_init_obs + i:]
+        X = all_X[:num_init_obs + i]
+        Y = all_Y[:num_init_obs + i]
         if i % 10 == 0:
             print(
                 f"Starting label {label}, seed {seed}, iteration {i}, time: {time()-start}"
@@ -308,6 +266,7 @@ def main(
                     # Default to fitting a fresh model in case of an error.
                     model = fit_modellist(X, Y, num_arms, old_model)
             else:
+                print(f"{i=}, {X.shape}")
                 # Fit and train a new ModelListGP.
                 model = fit_modellist(X, Y, num_arms, old_model)
             old_model = model

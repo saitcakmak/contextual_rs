@@ -4,7 +4,7 @@ such as the functions fitting the GP models.
 
 from typing import Optional
 
-from botorch import fit_gpytorch_model
+from botorch import fit_gpytorch_mll
 from botorch.models import ModelListGP, SingleTaskGP
 from botorch.models.transforms import Standardize, Normalize
 from botorch.optim.utils import sample_all_priors
@@ -41,11 +41,11 @@ def fit_modellist(X: Tensor, Y: Tensor, num_arms: int) -> ModelListGP:
     for m in model.models:
         try:
             mll = ExactMarginalLogLikelihood(m.likelihood, m)
-            fit_gpytorch_model(mll)
+            fit_gpytorch_mll(mll)
         except NotPSDError:
             sample_all_priors(m)
             mll = ExactMarginalLogLikelihood(m.likelihood, m)
-            fit_gpytorch_model(mll)
+            fit_gpytorch_mll(mll)
     return model
 
 
@@ -57,7 +57,7 @@ def fit_single_gp(X: Tensor, Y: Tensor) -> SingleTaskGP:
         X, Y, outcome_transform=Standardize(m=1), input_transform=Normalize(d=X.shape[-1]),
     )
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
+    fit_gpytorch_mll(mll)
     return model
 
 
@@ -94,6 +94,9 @@ def fit_modellist_with_reuse(X: Tensor, Y: Tensor, num_arms: int, old_model: Opt
                 models.append(old_model.models[i])
                 skip_count += 1
                 continue
+        if num_train == 0:
+            print(f"{X=}")
+            raise RuntimeError("Missing data!")
         # If the model inputs changed, re-fit.
         m = SingleTaskGP(
             X[mask_list[i]][..., 1:],
@@ -103,11 +106,11 @@ def fit_modellist_with_reuse(X: Tensor, Y: Tensor, num_arms: int, old_model: Opt
         )
         try:
             mll = ExactMarginalLogLikelihood(m.likelihood, m)
-            fit_gpytorch_model(mll)
+            fit_gpytorch_mll(mll)
         except NotPSDError:
             sample_all_priors(m)
             mll = ExactMarginalLogLikelihood(m.likelihood, m)
-            fit_gpytorch_model(mll)
+            fit_gpytorch_mll(mll)
         models.append(m)
         try:
             num_last_train_inputs[i] = num_train

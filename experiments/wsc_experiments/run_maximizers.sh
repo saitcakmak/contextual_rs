@@ -7,7 +7,6 @@ arg_list=(
   "c_5_mean"
 )
 
-
 for i in {0..99}
   do
   wait
@@ -18,22 +17,8 @@ done
 for i in {0..99}
   do
   wait
-     python find_maximizers.py config_b_3_worst ML_IKG $i -a
-     python find_maximizers.py config_b_3_worst ML_Gao $i -a
-done
-
-for i in {0..99}
-  do
-  wait
      python find_maximizers.py config_g_4_mean ML_IKG $i -a
      python find_maximizers.py config_g_4_mean ML_Gao $i -a
-done
-
-for i in {0..99}
-  do
-  wait
-     python find_maximizers.py config_g_4_worst ML_IKG $i -a
-     python find_maximizers.py config_g_4_worst ML_Gao $i -a
 done
 
 for i in {0..99}
