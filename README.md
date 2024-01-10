@@ -1,9 +1,20 @@
 # Contextual Ranking and Selection with Gaussian Processes
 
-> [S. Cakmak, S. Gao, and E. Zhou. Contextual Ranking and Selection with Gaussian 
-Processes. Winter Simulation Conference, 2021.] 
+[S. Cakmak, Y. Wang, S. Gao, and E. Zhou. Contextual Ranking and Selection with Gaussian Processes and OCBA. ACM Transactions on Modeling and Computer Simulation, 2023.](https://dl.acm.org/doi/pdf/10.1145/3633456)
 
-[comment]: <> (> &#40;https://arxiv.org/abs/2007.05554&#41;)
+```
+@article{cakmak2023contextual,
+  title={Contextual Ranking and Selection with Gaussian Processes and OCBA},
+  author={Cakmak, Sait and Wang, Yuhao and Gao, Siyang and Zhou, Enlu},
+  journal = {ACM Transactions on Modeling and Computer Simulation},
+  year={2023},
+  publisher={Association for Computing Machinery},
+  address = {New York, NY, USA},
+}
+```
+
+[S. Cakmak, S. Gao, and E. Zhou. Contextual Ranking and Selection with Gaussian 
+Processes. Winter Simulation Conference, 2021.](https://arxiv.org/abs/2007.05554)
 
 ```
 @inproceedings{cakmak2021contextual,
@@ -26,8 +37,8 @@ pip install -e .
 
 ### Repo Structure:
 * The `WSC` brach includes the code for the WSC version of the paper.
-* The `post_wsc` branch includes additional algorithms and experiments, which are 
-  presented in the arXiv version and the journal submission.
+* The `TOMACS` branch includes additional algorithms and experiments, which are 
+  presented in the journal article.
 
 ### Directory:
 Any folder that is not noted below is safe to ignore.
